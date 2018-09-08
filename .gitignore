@@ -1,3 +1,6 @@
+# for data folder
+data
+
 # Maybe future ignore
 *.png
 *.jpg
