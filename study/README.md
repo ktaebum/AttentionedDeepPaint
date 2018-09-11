@@ -4,9 +4,9 @@
 
 1. GAN [[arXiv](https://arxiv.org/abs/1406.2661)]
     - The first paper of generative adversarial network
-2. DCGAN [[(arXiv)](https://arxiv.org/abs/1511.06434)]
+2. DCGAN [[arXiv](https://arxiv.org/abs/1511.06434)]
     - GAN using convolutional layer
-3. Conditional GAN [[(arXiv)](https://arxiv.org/abs/1411.1784)]
+3. Conditional GAN [[arXiv](https://arxiv.org/abs/1411.1784)]
     - Concat additional information in GAN
 3. pix2pix [[arXiv](https://arxiv.org/abs/1611.07004)]
     - Image translation
