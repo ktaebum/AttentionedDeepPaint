@@ -4,113 +4,107 @@ import tensorflow as tf
 import numpy as np
 import random
 
-from utils.facades import FacadeLoader
-from models.ganmodel import pix_discriminator, pix_generator
+from models.pix import Pix2PixGenerator
+from models.patchgan import PatchGAN
+
+from utils.loader import ImageTranslationDataLoader
+from utils.losses import gan_loss
+from utils.image import random_jittering
+
 import matplotlib.pyplot as plt
 
-plt.rcParams['figure.figsize'] = (12.0, 8.0)
+plt.rcParams['figure.figsize'] = (16.0, 9.0)
 
-batch_size = 64
+batch_size = 1
 num_epochs = 200
 lambd = 100
 learning_rate = 0.0002
 
 
 def main():
-    loader = FacadeLoader('./data/facades', batch_size)
+    loader = ImageTranslationDataLoader('./data/facades', batch_size)
 
-    X = tf.placeholder(tf.float32, [None, 256, 256, 3])  # real
-    Y = tf.placeholder(tf.float32, [None, 256, 256, 3])  # facade
+    A = tf.placeholder(tf.float32, [None, 256, 256, 3])  # real
+    B = tf.placeholder(tf.float32, [None, 256, 256, 3])  # facade
+    image_holder_A = tf.placeholder(tf.float32, [None, 256, 256, 3])
+    aug_A = random_jittering(image_holder_A)
+    prob = tf.placeholder_with_default(0.5, shape=())
 
-    # in this version, it does not use this Z
-    Z = tf.placeholder(tf.float32, [None, 256, 256, 1])
+    generator = Pix2PixGenerator('pixGen', False)
+    discriminator = PatchGAN('pixDis', False)
 
     with tf.variable_scope('generator'):
-        generator = pix_generator(Y, Z)
+        fake_image = generator(A, prob)  # make B from A
 
     with tf.variable_scope('discriminator') as scope:
-        logit_real = pix_discriminator(X, Y)
+        logit_real = discriminator(tf.concat([A, B], 3))
         scope.reuse_variables()
-        logit_fake = pix_discriminator(generator, Y)
+        logit_fake = discriminator(tf.concat([A, fake_image], 3))
 
-    # calculate discriminate loss
-    label_real = tf.ones_like(logit_real)
-    label_dfake = tf.zeros_like(logit_fake)
-
-    loss_discriminate = tf.reduce_mean(
-        tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=logit_real, labels=label_real))
-    loss_discriminate += tf.reduce_mean(
-        tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=logit_fake, labels=label_dfake))
-
-    # calculate generate loss
-    label_gfake = tf.ones_like(logit_fake)
-
-    loss_generate = tf.reduce_mean(
-        tf.nn.sigmoid_cross_entropy_with_logits(
-            logits=logit_fake, labels=label_gfake))
+    g_ce_loss, d_ce_loss = gan_loss(logit_real, logit_fake)
 
     # add L1 Loss
-    loss_generate += lambd * tf.reduce_mean(tf.abs(generator - X))
+    l1_loss = tf.reduce_mean(tf.abs(fake_image - B))
+    g_loss = g_ce_loss * lambd * l1_loss
 
-    # get each trainable variables
-    g_var = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'generator')
-    d_var = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES,
-                              'discriminator')
+    with tf.name_scope('d_train'):
+        d_var = [
+            var for var in tf.trainable_variables()
+            if var.name.startswith("discriminator")
+        ]
+        d_optim = tf.train.AdamOptimizer(learning_rate, 0.5)
+        d_train = d_optim.minimize(d_ce_loss / 2, var_list=d_var)
 
-    # setting var_list prevent backpropagation in other model
-    train_discriminate = tf.train.AdamOptimizer(
-        learning_rate=learning_rate, beta1=0.5).minimize(
-            loss_discriminate, var_list=d_var)
-    train_generate = tf.train.AdamOptimizer(
-        learning_rate=learning_rate, beta1=0.5).minimize(
-            loss_generate, var_list=g_var)
+    with tf.name_scope('g_train'):
+        with tf.control_dependencies([d_train]):
+            g_var = [
+                var for var in tf.trainable_variables()
+                if var.name.startswith("generator")
+            ]
+            g_optim = tf.train.AdamOptimizer(learning_rate, 0.5)
+            g_train = g_optim.minimize(g_loss, var_list=g_var)
 
     def train(sess, last_iter):
         for i, _ in enumerate(range(loader.train_step), last_iter + 1):
-            real, facade = loader.get_next_train_batch()
-            z = np.random.normal(size=[*facade.shape[:-1], 1]).astype(
-                np.float32)
+            image_B, image_A = loader.get_next_train_batch()
 
-            loss_d, _ = sess.run([loss_discriminate, train_discriminate],
-                                 feed_dict={
-                                     X: real,
-                                     Y: facade,
-                                     Z: z
-                                 })
-
-            loss_g, _ = sess.run([loss_generate, train_generate],
-                                 feed_dict={
-                                     X: real,
-                                     Y: facade,
-                                     Z: z
-                                 })
-
-            # update G twice
-            _ = sess.run(
-                train_generate, feed_dict={
-                    X: real,
-                    Y: facade,
-                    Z: z
+            # random jittering input image
+            image_A = sess.run(
+                aug_A, feed_dict={
+                    image_holder_A: image_A,
                 })
 
-            if i % 10 == 0:
-                print('D_loss = %f, G_loss = %f' % (loss_d, loss_g))
+            d_loss, _ = sess.run([d_ce_loss, d_train],
+                                 feed_dict={
+                                     A: image_A,
+                                     B: image_B,
+                                     prob: 0.5
+                                 })
+
+            g_loss_val, l1_loss_val, _, _ = sess.run(
+                [g_ce_loss, l1_loss, g_loss, g_train],
+                feed_dict={
+                    A: image_A,
+                    B: image_B,
+                    prob: 0.5
+                })
+
+            if i % 100 == 0:
+                print('D_loss = %f, G_loss = %f, L1_loss = %f' %
+                      (d_loss, g_loss_val, l1_loss_val))
 
         print('Train epoch %d finished' % epoch)
-        return last_iter
+        return i
 
     def validation(sess):
-        real, facade = loader.get_next_val_batch()
-        z = np.random.normal(size=[*facade.shape[:-1], 1]).astype(np.float32)
+        image_B, image_A = loader.get_next_val_batch()
 
-        sample = sess.run(generator, feed_dict={Y: facade, Z: z})
+        sample = sess.run(fake_image, feed_dict={A: image_A, prob: 0.5})
 
         # plot random image
         idx = random.randint(0, len(sample) - 1)
 
-        return sample[idx], real[idx]
+        return sample[idx], image_B[idx], image_A[idx]
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -118,15 +112,21 @@ def main():
         for epoch in range(1, num_epochs + 1):
             last_iter = train(sess, last_iter)
 
-            sample, real = validation(sess)
+            sample, real, label = validation(sess)
 
-            fig, ax = plt.subplots(1, 2)
+            fig, ax = plt.subplots(1, 3)
 
-            ax[0].imshow(sample)
-            ax[0].set_title('gan')
+            ax[0].imshow(label)
+            ax[0].set_title('label')
+            ax[0].axis('off')
 
             ax[1].imshow(real)
             ax[1].set_title('real')
+            ax[1].axis('off')
+
+            ax[2].imshow(sample)
+            ax[2].set_title('generated')
+            ax[2].axis('off')
 
             plt.savefig('test_pix2pix_%d.png' % epoch)
             plt.close()
