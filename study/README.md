@@ -13,7 +13,6 @@
 3. pix2pix [[arXiv](https://arxiv.org/abs/1611.07004)]
     - Image translation
     - Implented
-        - But something wrong maybe?
 4. CycleGAN [[arXiv](https://arxiv.org/abs/1703.10593)]
     - Improved version of pix2pix
 

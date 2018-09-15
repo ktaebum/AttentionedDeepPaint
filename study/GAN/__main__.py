@@ -70,9 +70,8 @@ def main():
 
                 samples = sess.run(gen)
 
-                loss_d, _ = sess.run(
-                    [loss_discriminate, train_discriminate],
-                    feed_dict={X: image})
+                loss_d, _ = sess.run([loss_discriminate, train_discriminate],
+                                     feed_dict={X: image})
                 loss_g, _ = sess.run([loss_generate, train_generate])
 
                 if i % 100 == 0:
