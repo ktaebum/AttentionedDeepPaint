@@ -26,4 +26,5 @@
 2. Conditional GAN
 ![CGAN](https://i.imgur.com/wVlOZnA.png)
 3. pix2pix
-![pix2pix](https://i.imgur.com/jUtSU4v.png)
+![pix2pix](https://i.imgur.com/MsAg102.png)
+	- Why it cannot sharpen edges in picture?
