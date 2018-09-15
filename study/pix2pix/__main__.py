@@ -9,7 +9,7 @@ from models.patchgan import PatchGAN
 
 from utils.loader import ImageTranslationDataLoader
 from utils.losses import gan_loss
-from utils.image import random_jittering
+from utils.image import inverse_transform
 
 import matplotlib.pyplot as plt
 
@@ -26,8 +26,6 @@ def main():
 
     A = tf.placeholder(tf.float32, [None, 256, 256, 3])  # real
     B = tf.placeholder(tf.float32, [None, 256, 256, 3])  # facade
-    image_holder_A = tf.placeholder(tf.float32, [None, 256, 256, 3])
-    aug_A = random_jittering(image_holder_A)
     prob = tf.placeholder_with_default(0.5, shape=())
 
     generator = Pix2PixGenerator('pixGen', False)
@@ -68,12 +66,6 @@ def main():
         for i, _ in enumerate(range(loader.train_step), last_iter + 1):
             image_B, image_A = loader.get_next_train_batch()
 
-            # random jittering input image
-            image_A = sess.run(
-                aug_A, feed_dict={
-                    image_holder_A: image_A,
-                })
-
             d_loss, _ = sess.run([d_ce_loss, d_train],
                                  feed_dict={
                                      A: image_A,
@@ -113,21 +105,10 @@ def main():
             last_iter = train(sess, last_iter)
 
             sample, real, label = validation(sess)
+            result = np.concatenate([label, real, sample], axis=1)
 
-            fig, ax = plt.subplots(1, 3)
-
-            ax[0].imshow(label)
-            ax[0].set_title('label')
-            ax[0].axis('off')
-
-            ax[1].imshow(real)
-            ax[1].set_title('real')
-            ax[1].axis('off')
-
-            ax[2].imshow(sample)
-            ax[2].set_title('generated')
-            ax[2].axis('off')
-
+            plt.figure()
+            plt.imshow(inverse_transform(result))
             plt.savefig('test_pix2pix_%d.png' % epoch)
             plt.close()
 

@@ -4,9 +4,7 @@ import glob
 import random
 import numpy as np
 
-from imageio import imread
-
-from utils.image import preprocess
+from utils.image import load_data
 
 
 class ImageTranslationDataLoader:
@@ -14,7 +12,7 @@ class ImageTranslationDataLoader:
     image translation dataset loader
     """
 
-    def __init__(self, root, batch_size=20):
+    def __init__(self, root, batch_size=1):
         train_root = os.path.join(root, "train")
         val_root = os.path.join(root, "val")
 
@@ -46,13 +44,14 @@ class ImageTranslationDataLoader:
             if self.train_idx == self.len_train:
                 self.train_idx = 0
 
-        images = np.array([imread(file) for file in files], dtype=np.float32)
+        image_A, image_B = [], []
+        for file in files:
+            A, B = load_data(file)
+            image_A.append(A)
+            image_B.append(B)
 
-        image_A = images[:, :, :256]
-        image_B = images[:, :, 256:]
-
-        image_A = preprocess(image_A)
-        image_B = preprocess(image_B)
+        image_A = np.array(image_A, dtype=np.float32)
+        image_B = np.array(image_B, dtype=np.float32)
 
         return image_A, image_B
 
@@ -68,12 +67,13 @@ class ImageTranslationDataLoader:
             if self.val_idx == self.len_val:
                 self.val_idx = 0
 
-        images = np.array([imread(file) for file in files], dtype=np.float32)
+        image_A, image_B = [], []
+        for file in files:
+            A, B = load_data(file, is_test=True)
+            image_A.append(A)
+            image_B.append(B)
 
-        image_A = images[:, :, :256]
-        image_B = images[:, :, 256:]
-
-        image_A = preprocess(image_A)
-        image_B = preprocess(image_B)
+        image_A = np.array(image_A, dtype=np.float32)
+        image_B = np.array(image_B, dtype=np.float32)
 
         return image_A, image_B
