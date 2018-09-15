@@ -2,6 +2,7 @@ import os
 import glob
 
 import random
+import subprocess
 import numpy as np
 
 from utils.image import load_data
@@ -13,6 +14,11 @@ class ImageTranslationDataLoader:
     """
 
     def __init__(self, root, batch_size=1):
+        data_name = root.split('/')[-1]
+        if not os.path.exists(root):
+            print('No %s data exists!' % data_name)
+            print('Download...')
+            subprocess.call(['sh', 'download_data.sh', data_name])
         train_root = os.path.join(root, "train")
         val_root = os.path.join(root, "val")
 
