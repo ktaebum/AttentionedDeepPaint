@@ -13,12 +13,11 @@ def gan_loss_cycle(logit_real, logit_fake):
     # gan loss for cycle gan
     g_loss = tf.reduce_mean((logit_fake - 1)**2)
 
-    d_loss = tf.reduce_mean((logit_real - 1)**2)
-    d_loss += tf.reduce_mean((logit_fake)**2)
+    d_loss = tf.reduce_mean((logit_real - 1)**2 + logit_fake**2)
 
     return g_loss, d_loss
 
 
-def cycle_loss(cycled_B, B, cycled_A, A):
+def cycle_loss(cycled_A, A, cycled_B, B):
     return tf.reduce_mean(tf.abs(cycled_B - B)) + tf.reduce_mean(
         tf.abs(cycled_A - A))
