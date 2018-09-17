@@ -43,7 +43,7 @@ def main():
 
     # add L1 Loss
     l1_loss = tf.reduce_mean(tf.abs(fake_image - B))
-    g_loss = g_ce_loss * lambd * l1_loss
+    g_loss = g_ce_loss + lambd * l1_loss
 
     with tf.name_scope('d_train'):
         d_var = [
