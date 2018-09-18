@@ -5,7 +5,10 @@ import random
 import subprocess
 import numpy as np
 
-from utils.image import load_data
+import torch
+import torchvision.transforms as transforms
+
+from PIL import Image
 
 
 class ImageTranslationDataLoader:
@@ -38,6 +41,13 @@ class ImageTranslationDataLoader:
             np.ceil(len(self.train_files) / self.batch_size))
         self.val_step = int(np.ceil(len(self.val_files) / self.batch_size))
 
+        self.transforms_ = transforms.Compose([
+            transforms.Resize(286, Image.BICUBIC),
+            transforms.RandomCrop(256),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
+
     def get_next_train_batch(self):
         if self.len_train - self.train_idx < self.batch_size:
             # cannot read exact batch size
@@ -52,12 +62,14 @@ class ImageTranslationDataLoader:
 
         image_A, image_B = [], []
         for file in files:
-            A, B = load_data(file)
-            image_A.append(A)
-            image_B.append(B)
+            AB = Image.open(file)
+            A = AB.crop((0, 0, 256, 256))
+            B = AB.crop((256, 0, 512, 256))
+            image_A.append(self.transforms_(A))
+            image_B.append(self.transforms_(B))
 
-        image_A = np.array(image_A, dtype=np.float32)
-        image_B = np.array(image_B, dtype=np.float32)
+        image_A = torch.stack(image_A)
+        image_B = torch.stack(image_B)
 
         return image_A, image_B
 
@@ -75,11 +87,13 @@ class ImageTranslationDataLoader:
 
         image_A, image_B = [], []
         for file in files:
-            A, B = load_data(file, is_test=True)
-            image_A.append(A)
-            image_B.append(B)
+            AB = Image.open(file)
+            A = AB.crop((0, 0, 256, 256))
+            B = AB.crop((256, 0, 512, 256))
+            image_A.append(self.transforms_(A))
+            image_B.append(self.transforms_(B))
 
-        image_A = np.array(image_A, dtype=np.float32)
-        image_B = np.array(image_B, dtype=np.float32)
+        image_A = torch.stack(image_A)
+        image_B = torch.stack(image_B)
 
         return image_A, image_B

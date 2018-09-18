@@ -101,7 +101,10 @@ class ResidualGenerator:
 
     def __batch_norm(self, x, name):
         return tf.layers.batch_normalization(
-            x, name=name, gamma_initializer=self.gamma_initializer)
+            x,
+            name=name,
+            gamma_initializer=self.gamma_initializer,
+            training=True)
 
     def __conv2d_keepdim(self, x, out_channel, name):
         # convolutional layer inside of residual block, which keep dimension
