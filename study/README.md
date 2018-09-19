@@ -15,6 +15,7 @@
     - Implented
 4. CycleGAN [[arXiv](https://arxiv.org/abs/1703.10593)]
     - Improved version of pix2pix
+    - Implemented
 
 ## Misc.
 ### [Download Preprocessed Data](https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/datasets/)
@@ -27,3 +28,5 @@
 3. pix2pix
 ![pix1](https://i.imgur.com/ukSnnOu.png)
 ![pix2](https://i.imgur.com/5vRdMyU.png)
+4. CycleGAN
+![cycle](https://i.imgur.com/vvgK2UK.png)
