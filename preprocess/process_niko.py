@@ -61,7 +61,8 @@ class NikoPairedDataset(Dataset):
         imageB = crop(imageB)
 
         if self.transform is not None:
-            image = self.transform(image)
+            imageA = self.transform(imageA)
+            imageB = self.transform(imageB)
 
         return imageA, imageB
 
