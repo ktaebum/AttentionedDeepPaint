@@ -8,9 +8,6 @@ from . import get_sketch, save_image
 
 from PIL import Image
 
-import torch
-import torch.nn as nn
-
 from torchvision import transforms
 from torch.utils.data import Dataset
 
@@ -55,13 +52,12 @@ class NikoPairedDataset(Dataset):
 
         padding = transforms.Pad((0, height_pad, width_pad, 0),
                                  (255, 255, 255))
-        crop = transforms.CenterCrop(512)
 
         imageA = padding(imageA)
-        imageA = crop(imageA)
+        imageA = imageA.crop((0, 0, 512, 512))
 
         imageB = padding(imageB)
-        imageB = crop(imageB)
+        imageB = imageB.crop((0, 0, 512, 512))
 
         if self.transform is not None:
             image = self.transform(image)
