@@ -52,12 +52,13 @@ class NikoPairedDataset(Dataset):
 
         padding = transforms.Pad((0, height_pad, width_pad, 0),
                                  (255, 255, 255))
+        crop = transforms.CenterCrop(512)
 
         imageA = padding(imageA)
-        imageA = imageA.crop((0, 0, 512, 512))
+        imageA = crop(imageA)
 
         imageB = padding(imageB)
-        imageB = imageB.crop((0, 0, 512, 512))
+        imageB = crop(imageB)
 
         if self.transform is not None:
             image = self.transform(image)
