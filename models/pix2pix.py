@@ -94,8 +94,8 @@ class Pix2PixGenerator(nn.Module):
         """
         Build Down Sampler
 
-        For the last layer, since it produces (batch_size, self.dim * 16, 1, 1),
-        do not use normalization (it raises error!)
+        For the last layer, since it produces (batch_size, self.dim * 16, 1, 1)
+        , do not use normalization (it raises error!)
         """
         layers = nn.ModuleList()
 
