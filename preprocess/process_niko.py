@@ -19,7 +19,17 @@ class NikoPairedDataset(Dataset):
     (colorized image, sketch image)
     """
 
-    def __init__(self, root='./data/pair_niko', mode='train', transform=None):
+    def __init__(self,
+                 root='./data/pair_niko',
+                 mode='train',
+                 transform=None,
+                 size=512):
+        """
+        @param root: data root
+        @param mode: set mode (train, test, val)
+        @param transform: Image Processing
+        @param size: image crop (or resize) size
+        """
         if mode not in {'train', 'val', 'test'}:
             raise ValueError('Invalid Dataset. Pick among (train, val, test)')
 
@@ -28,6 +38,11 @@ class NikoPairedDataset(Dataset):
         self.is_train = (mode == 'train')
         self.transform = transform
         self.image_files = glob.glob(os.path.join(root, '*.png'))
+        self.size = size
+
+        if len(self.image_files) == 0:
+            # no png file, use jpg
+            self.image_files = glob.glob(os.path.join(root, '*.jpg'))
 
     def __len__(self):
         return len(self.image_files)
@@ -41,18 +56,20 @@ class NikoPairedDataset(Dataset):
         """
 
         image = Image.open(self.image_files[index])
-
         image_width, image_height = image.size
         imageA = image.crop((0, 0, image_width // 2, image_height))
         imageB = image.crop((image_width // 2, 0, image_width, image_height))
 
         # default transforms, pad if needed and center crop 512
-        width_pad = 512 - image_width // 2
-        height_pad = 512 - image_height
+        width_pad = self.size - image_width // 2
+        height_pad = self.size - image_height
 
+        # padding as white
         padding = transforms.Pad((0, height_pad, width_pad, 0),
                                  (255, 255, 255))
-        crop = transforms.CenterCrop(512)
+
+        # use center crop
+        crop = transforms.CenterCrop(self.size)
 
         imageA = padding(imageA)
         imageA = crop(imageA)
@@ -63,6 +80,10 @@ class NikoPairedDataset(Dataset):
         if self.transform is not None:
             imageA = self.transform(imageA)
             imageB = self.transform(imageB)
+
+        # scale image into range [-1, 1]
+        imageA = (imageA * 2) - 1
+        imageB = (imageB * 2) - 1
 
         return imageA, imageB
 
