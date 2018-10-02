@@ -26,27 +26,33 @@ from PIL import Image
 def main(args):
     # device setting
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    normalize = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
 
-    train_transform = transforms.Compose(
-        [transforms.RandomHorizontalFlip(),
-         transforms.ToTensor(), normalize])
-    val_transform = transforms.Compose([transforms.ToTensor(), normalize])
+    train_transform = transforms.Compose([
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+    ])
+    val_transform = transforms.Compose([
+        transforms.ToTensor(),
+    ])
 
     # assign data loader
     train_loader = DataLoader(
         NikoPairedDataset(transform=train_transform),
         shuffle=True,
-        batch_size=args.batch_size)
-    val_loader = NikoPairedDataset(transform=val_transform, mode='val')
+        batch_size=args.batch_size,
+    )
+    val_loader = NikoPairedDataset(
+        transform=val_transform,
+        mode='val',
+    )
 
     # assign model
     generator = Pix2PixGenerator(norm='batch', dim=64).to(device)
     discriminator = PatchGAN(norm='batch', dim=64).to(device)
 
     # assign loss
-    gan_loss = GANLoss(True)  # use MSE Loss
-    l1_loss = nn.L1Loss()
+    gan_loss = GANLoss(False).to(device)  # use MSE Loss
+    l1_loss = nn.L1Loss().to(device)
 
     # assign optimizer
     optimG = optim.Adam(
@@ -58,9 +64,11 @@ def main(args):
         lr=args.learning_rate,
         betas=(args.beta1, 0.999))
 
-    if device.type == 'cuda':
-        generator = nn.DataParallel(generator)
-        discriminator = nn.DataParallel(discriminator)
+    # load pretrained model
+    if args.pretrainedG != '':
+        load_checkpoints(args.pretrainedG, generator, optimG)
+    if args.pretrainedD != '':
+        load_checkpoints(args.pretrainedD, discriminator, optimD)
 
     def train(last_iter):
         for i, datas in enumerate(train_loader, last_iter + 1):
@@ -74,10 +82,12 @@ def main(args):
 
             # proceed Discriminator
             optimD.zero_grad()
-            logit_real = discriminator(torch.cat([imageA, imageB], 1))
+            real_AB = torch.cat([imageA, imageB], 1)
+            logit_real = discriminator(real_AB)
             d_loss_real = gan_loss(logit_real, True)
 
-            logit_fake = discriminator(torch.cat([imageA, fakeB.detach()], 1))
+            fake_AB = torch.cat([imageA, fakeB], 1)
+            logit_fake = discriminator(fake_AB.detach())
             d_loss_fake = gan_loss(logit_fake, False)
             d_loss = (d_loss_fake + d_loss_real) * 0.5
             d_loss.backward()
@@ -85,16 +95,18 @@ def main(args):
 
             # proceed Generator
             optimG.zero_grad()
-            logit_fake = discriminator(torch.cat([imageA, fakeB], 1))
+            fake_AB = torch.cat([imageA, fakeB], 1)
+            logit_fake = discriminator(fake_AB)
             g_loss_gan = gan_loss(logit_fake, True)
-            g_loss_l1 = l1_loss(fakeB, imageB)
-            g_loss = g_loss_gan + args.lambd * g_loss_l1
+            g_loss_l1 = l1_loss(fakeB, imageB) * args.lambd
+            g_loss = g_loss_gan + g_loss_l1
             g_loss.backward()
             optimG.step()
 
             if args.verbose and i % args.print_every == 0:
-                print('Iter %d: d_loss = %f, g_loss = %f, l1_loss = %f' %
-                      (i, d_loss, g_loss_gan, g_loss_l1))
+                print(
+                    'Iter %d: d_loss_real = %f, d_loss_fake = %f, g_loss = %f, l1_loss = %f'
+                    % (i, d_loss_real, d_loss_fake, g_loss_gan, g_loss_l1))
 
         return i
 
@@ -156,6 +168,11 @@ def main(args):
 if __name__ == "__main__":
     parser = get_default_argparser()
     parser.add_argument(
+        '--use-mse',
+        help='set whether to use mean square loss in gan loss',
+        action='store_true',
+    )
+    parser.add_argument(
         '--lambd',
         help='set l1 loss weight',
         metavar='',
@@ -163,4 +180,17 @@ if __name__ == "__main__":
         default=100.)
     parser.add_argument(
         '--mode', help='set mapping mode', metavar='', type=str, default='A2B')
+    parser.add_argument(
+        '--pretrainedG',
+        help='set pretrained generator',
+        metavar='',
+        type=str,
+        default='')
+    parser.add_argument(
+        '--pretrainedD',
+        help='set pretrained discriminator',
+        metavar='',
+        type=str,
+        default='')
+
     main(parser.parse_args())

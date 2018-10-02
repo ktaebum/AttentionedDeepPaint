@@ -34,11 +34,14 @@ class Pix2PixGenerator(nn.Module):
 
         # channel configuration
         # use forward in downsample, reversed in upsample
+        #  self.cfg = [
+        #  3, dim, dim * 2, dim * 4, dim * 4, dim * 8, dim * 8, dim * 8,
+        #  dim * 8, dim * 16
+        #  ]
         self.cfg = [
-            3, dim, dim * 2, dim * 4, dim * 4, dim * 8, dim * 8, dim * 8,
+            3, dim, dim * 2, dim * 4, dim * 8, dim * 8, dim * 8, dim * 8,
             dim * 8, dim * 16
         ]
-
         self.dropout = nn.Dropout(dropout) if dropout > 0 else nn.Sequential()
         self.norm = nn.BatchNorm2d if norm == 'batch' else nn.InstanceNorm2d
         self.down_sampler = self._down_sample()
@@ -100,17 +103,17 @@ class Pix2PixGenerator(nn.Module):
         layers = nn.ModuleList()
 
         for i in range(len(self.cfg) - 1):
-            block = nn.Sequential(*[
+            block = nn.Sequential(
                 nn.Conv2d(
                     in_channels=self.cfg[i],
                     out_channels=self.cfg[i + 1],
                     kernel_size=4,
                     stride=2,
                     padding=1),
-                self.norm(self.cfg[i + 1]) if i < len(self.cfg) - 2 else nn.
-                Sequential(),
-                nn.LeakyReLU(0.2, inplace=True)
-            ])
+                self.norm(self.cfg[i + 1])
+                if i < len(self.cfg) - 2 else nn.Sequential(),
+                nn.LeakyReLU(0.2, inplace=True),
+            )
             layers.append(block)
 
         return layers

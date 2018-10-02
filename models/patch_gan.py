@@ -20,7 +20,7 @@ import torch.nn as nn
 
 
 class PatchGAN(nn.Module):
-    def __init__(self, dim=64, norm='batch'):
+    def __init__(self, dim=64, norm='batch', sigmoid=True):
         super(PatchGAN, self).__init__()
         if norm == 'batch':
             self.norm = nn.BatchNorm2d
@@ -33,13 +33,18 @@ class PatchGAN(nn.Module):
 
         self.layers = nn.ModuleList()
 
-        self.block1 = self._building_block(6, self.dim)
+        self.block1 = self._building_block(6, self.dim, False)
         self.block2 = self._building_block(self.dim, self.dim * 2)
         self.block3 = self._building_block(self.dim * 2, self.dim * 4)
-        self.block4 = self._building_block(self.dim * 4, self.dim * 8)
-        self.block5 = self._building_block(self.dim * 8, self.dim * 16)
-        self.block6 = nn.Sequential(
-            nn.Conv2d(self.dim * 16, 1, 4, 2, 1), nn.Sigmoid())
+        self.block4 = self._building_block(
+            self.dim * 4, self.dim * 8, stride=1)
+        self.block5 = nn.Sequential(
+            nn.Conv2d(self.dim * 8, 1, 4, 1, 1),
+            nn.Sigmoid() if sigmoid else nn.Sequential())
+
+        for module in self.modules():
+            if isinstance(module, nn.Conv2d):
+                nn.init.normal_(module.weight, 0, 0.02)
 
     def forward(self, image):
         image = self.block1(image)
@@ -47,14 +52,15 @@ class PatchGAN(nn.Module):
         image = self.block3(image)
         image = self.block4(image)
         image = self.block5(image)
-        image = self.block6(image)
 
         return image
 
-    def _building_block(self, in_channel, out_channel):
+    def _building_block(self, in_channel, out_channel, norm=True, stride=2):
         layers = []
-        layers.append(nn.Conv2d(in_channel, out_channel, 4, 2, 1))
-        layers.append(self.norm(out_channel))
+        layers.append(
+            nn.Conv2d(in_channel, out_channel, 4, stride=stride, padding=1))
+        if norm:
+            layers.append(self.norm(out_channel))
         layers.append(nn.LeakyReLU(0.2, True))
 
         return nn.Sequential(*layers)
