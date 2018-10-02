@@ -6,14 +6,15 @@ import torch
 import torch.nn as nn
 
 
-class GANLoss:
+class GANLoss(nn.Module):
     def __init__(self, mse=True):
+        super(GANLoss, self).__init__()
         if mse:
             self.loss_function = nn.MSELoss()
         else:
             self.loss_function = nn.BCELoss()
 
-    def __call__(self, logit, is_real):
+    def forward(self, logit, is_real):
         if is_real:
             target = torch.ones_like(logit)
         else:
