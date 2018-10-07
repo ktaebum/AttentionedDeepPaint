@@ -1,6 +1,5 @@
 """
-Pix2Pix Approach
-Pix2Pix Model Trainer
+Naive Vgg + Unet Approach
 """
 import random
 
@@ -36,8 +35,9 @@ def main(args):
     ])
 
     # assign data loader
+    train_data = NikoPairedDataset(transform=train_transform)
     train_loader = DataLoader(
-        NikoPairedDataset(transform=train_transform),
+        train_data,
         shuffle=True,
         batch_size=args.batch_size,
     )
@@ -59,20 +59,6 @@ def main(args):
         generator.parameters(),
         lr=args.learning_rate,
         betas=(args.beta1, 0.999))
-    #  optimG = optim.Adam(
-    #  list(generator.up_sampler.parameters()) + list(
-    #  generator.down_sampler.parameters()) + list(
-    #  generator.vgg_fc2.parameters()),
-    #  lr=args.learning_rate,
-    #      betas=(args.beta1, 0.999))
-    #  optimG1 = optim.Adam(
-    #  generator.guide_decoder1.parameters(),
-    #  lr=args.learning_rate,
-    #  betas=(args.beta1, 0.999))
-    #  optimG2 = optim.Adam(
-    #  generator.guide_decoder2.parameters(),
-    #  lr=args.learning_rate,
-    #      betas=(args.beta1, 0.999))
     optimD = optim.Adam(
         discriminator.parameters(),
         lr=args.learning_rate,
@@ -91,13 +77,21 @@ def main(args):
         return tensor_image
 
     def train(last_iter):
+        #  idx_range = range(0, len(train_data) - 1)
         for i, datas in enumerate(train_loader, last_iter + 1):
+            # sample other
+            #  idx = random.choice(idx_range)
+
+            #  styleA, styleB = train_data[idx]
             imageA, imageB = datas
             if args.mode == 'B2A':
                 # swap
                 imageA, imageB = imageB, imageA
+                #  styleA, styleB = styleB, styleA
+
             imageA = imageA.to(device)
             imageB = imageB.to(device)
+            #  styleB = styleB.unsqueeze(0).to(device)
             fakeB, guideB1, guideB2 = generator(imageA, center_crop(imageB))
 
             # proceed Discriminator
@@ -115,20 +109,14 @@ def main(args):
 
             # proceed Generator
             optimG.zero_grad()
-            #  optimG1.zero_grad()
-            #  optimG2.zero_grad()
 
             fake_AB = torch.cat([imageA, fakeB], 1)
             logit_fake = discriminator(fake_AB)
             g_loss_gan = gan_loss(logit_fake, True)
 
             g_loss_l1_g1 = l1_loss(guideB1, imageB) * args.alpha
-            #  g_loss_l1_g1.backward()
-            #  optimG1.step()
 
             g_loss_l1_g2 = l1_loss(guideB2, imageB) * args.beta
-            #  g_loss_l1_g2.backward()
-            #  optimG2.step()
 
             g_loss_l1 = (l1_loss(fakeB, imageB) + g_loss_l1_g1 +
                          g_loss_l1_g2) * args.lambd
@@ -148,35 +136,44 @@ def main(args):
         length = len(val_loader)
 
         # sample 3 images
-        idxs = random.sample(range(0, length - 1), 3)
+        idxs = random.sample(range(0, length - 1), 6)
+        styles = idxs[3:]
+        idxs = idxs[0:3]
 
-        sample = Image.new('RGB', (3 * 512, 3 * 512))
+        sample = Image.new('RGB', (4 * 512, 3 * 512))
         recover = transforms.ToPILImage()
 
-        for i, idx in enumerate(idxs):
-            concat = Image.new('RGB', (3 * 512, 512))
+        for i, (idx, style) in enumerate(zip(idxs, styles)):
+            concat = Image.new('RGB', (4 * 512, 512))
             imageA, imageB = val_loader[idx]
+            styleA, styleB = val_loader[style]
 
             if args.mode == 'B2A':
+                # A is a sketch
+                # B is a ground truth
                 imageA, imageB = imageB, imageA
+                styleA, styleB = styleB, styleA
 
             imageA = imageA.unsqueeze(0).to(device)
-            imageB = imageB.unsqueeze(0).to(device)
-            fakeB = generator(imageA, center_crop(imageB))[0].squeeze()
-            imageB = imageB.squeeze()
+            styleB = styleB.unsqueeze(0).to(device)
+            fakeB = generator(imageA, center_crop(styleB))[0].squeeze()
+            styleB = styleB.squeeze()
             imageA = imageA.squeeze()
 
             imageA = ((imageA + 1) * 0.5).detach().cpu()
             imageB = ((imageB + 1) * 0.5).detach().cpu()
+            styleB = ((styleB + 1) * 0.5).detach().cpu()
             fakeB = ((fakeB + 1) * 0.5).detach().cpu()
 
             imageA = recover(imageA)
             imageB = recover(imageB)
+            styleB = recover(styleB)
             fakeB = recover(fakeB)
 
             concat.paste(imageA, (0, 0))
-            concat.paste(imageB, (512, 0))
+            concat.paste(styleB, (512, 0))
             concat.paste(fakeB, (2 * 512, 0))
+            concat.paste(imageB, (3 * 512, 0))
 
             sample.paste(concat, (0, 0 + 512 * i))
 
@@ -191,9 +188,9 @@ def main(args):
 
             if args.save_every > 0 and epoch % args.save_every == 0:
                 save_checkpoints(
-                    generator, 'pix2pixG', epoch, optimizer=optimG)
+                    generator, 'VggUnetG', epoch, optimizer=optimG)
                 save_checkpoints(
-                    discriminator, 'pix2pixD', epoch, optimizer=optimD)
+                    discriminator, 'VggUnetD', epoch, optimizer=optimD)
             validate(epoch)
             print('Epoch %d finished' % epoch)
 
