@@ -16,10 +16,16 @@ class VggUnet(nn.Module):
                  dim=64,
                  bias=True,
                  norm='batch',
+                 guide_resolution=8,
                  dropout=0.5):
         super(VggUnet, self).__init__()
+        """
+        TODO:
+            Give generality to guide resolution for guide decoder
+        """
 
         self.resolution = resolution
+        self.guide_resolution = guide_resolution
         self.dim = dim
         self.bias = bias
         self.dropout = nn.Dropout(dropout) if dropout > 0 else nn.Sequential()
@@ -45,65 +51,25 @@ class VggUnet(nn.Module):
         pretrained_vgg = list(models.vgg19_bn(True).children())
         self.vgg_conv = pretrained_vgg[0]
         self.vgg_fc1 = pretrained_vgg[1][0]
-
-        # turn off gradient
-        for param in self.vgg_conv.parameters():
-            param.requires_grad = False
-
-        for param in self.vgg_fc1.parameters():
-            param.requires_grad = False
-
         self.vgg_fc2 = nn.Linear(4096, 2048, bias=bias)
 
         self.down_sampler = self._build_downsampler()
         self.up_sampler = self._build_upsampler()
 
-        self.guide_decoder1 = nn.Sequential(
-            nn.ConvTranspose2d(512, 512, 4, 2, 1, bias=self.bias)
-            if self.resolution == 512 else nn.Sequential(),
-            nn.ReLU(True) if self.resolution == 512 else nn.Sequential(),
-            # 16 x 16
-            nn.ConvTranspose2d(512, 512, 4, 2, 1, bias=self.bias),
-            nn.ReLU(True),
-            # 32 x 32
-            nn.ConvTranspose2d(512, 256, 4, 2, 1, bias=self.bias),
-            nn.ReLU(True),
-            # 64 x 64
-            nn.ConvTranspose2d(256, 128, 4, 2, 1, bias=self.bias),
-            nn.ReLU(True),
-            # 128 x 128
-            nn.ConvTranspose2d(128, 64, 4, 2, 1, bias=self.bias),
-            nn.ReLU(True),
-            # 256 x 256
-            nn.ConvTranspose2d(64, 3, 4, 2, 1, bias=self.bias),
-            nn.Tanh())
+        self.guide_decoder1 = self._build_guide_decoder()
+        self.guide_decoder2 = self._build_guide_decoder()
 
-        self.guide_decoder2 = nn.Sequential(
-            nn.ConvTranspose2d(512, 512, 4, 2, 1, bias=self.bias)
-            if self.resolution == 512 else nn.Sequential(),
-            nn.ReLU(True) if self.resolution == 512 else nn.Sequential(),
-            # 16 x 16
-            nn.ConvTranspose2d(512, 512, 4, 2, 1, bias=self.bias),
-            nn.ReLU(True),
-            # 32 x 32
-            nn.ConvTranspose2d(512, 256, 4, 2, 1, bias=self.bias),
-            nn.ReLU(True),
-            # 64 x 64
-            nn.ConvTranspose2d(256, 128, 4, 2, 1, bias=self.bias),
-            nn.ReLU(True),
-            # 128 x 128
-            nn.ConvTranspose2d(128, 64, 4, 2, 1, bias=self.bias),
-            nn.ReLU(True),
-            # 256 x 256
-            nn.ConvTranspose2d(64, 3, 4, 2, 1, bias=self.bias),
-            nn.Tanh())
+        # initialize weight
+        self._initialize_weight()
 
     def forward(self, image, reference):
 
         # calculate for style reference
-        reference = self.vgg_conv(reference)
-        reference = reference.reshape(reference.shape[0], -1)
-        reference = self.vgg_fc1(reference)
+        with torch.no_grad():
+            # do not train pretrained feature extraction model
+            reference = self.vgg_conv(reference)
+            reference = reference.reshape(reference.shape[0], -1)
+            reference = self.vgg_fc1(reference)
         reference = self.vgg_fc2(reference)
 
         skip_connections = []
@@ -113,7 +79,7 @@ class VggUnet(nn.Module):
 
         for i, layer in enumerate(self.down_sampler, 1):
             image = layer(image)
-            if image.shape[-1] == 8:
+            if image.shape[-1] == self.guide_resolution:
                 # extract for guide decoder1
                 guide1 = self.guide_decoder1(image)
             if i < len(self.down_sampler):
@@ -123,7 +89,10 @@ class VggUnet(nn.Module):
 
         # concat with style reference
         reference = reference.unsqueeze(-1).unsqueeze(-1)
-        image = torch.cat([image, reference], 1)
+
+        # add or concat?
+        image = image + reference
+        # image = torch.cat([image, reference], 1)
 
         for i, (connection, layer) in enumerate(
                 zip(skip_connections, self.up_sampler[:-1]), 1):
@@ -143,6 +112,46 @@ class VggUnet(nn.Module):
         image = torch.tanh(image)
 
         return image, guide1, guide2
+
+    def _initialize_weight(self):
+        initial_targets = [
+            self.down_sampler, self.up_sampler, self.guide_decoder1,
+            self.guide_decoder2
+        ]
+
+        for target in initial_targets:
+            for module in target.modules():
+                if isinstance(module, nn.Conv2d):
+                    nn.init.normal_(module.weight, 0, 0.02)
+                elif isinstance(module, nn.ConvTranspose2d):
+                    nn.init.normal_(module.weight, 0, 0.02)
+
+    def _build_guide_decoder(self):
+        """
+        Build Guide Decoder
+        """
+        guide_decoder = nn.Sequential(
+            nn.ConvTranspose2d(512, 512, 4, 2, 1, bias=self.bias)
+            if self.resolution == 512 else nn.Sequential(),
+            nn.ReLU(True) if self.resolution == 512 else nn.Sequential(),
+            # 16 x 16
+            nn.ConvTranspose2d(512, 512, 4, 2, 1, bias=self.bias),
+            nn.ReLU(True),
+            # 32 x 32
+            nn.ConvTranspose2d(512, 256, 4, 2, 1, bias=self.bias),
+            nn.ReLU(True),
+            # 64 x 64
+            nn.ConvTranspose2d(256, 128, 4, 2, 1, bias=self.bias),
+            nn.ReLU(True),
+            # 128 x 128
+            nn.ConvTranspose2d(128, 64, 4, 2, 1, bias=self.bias),
+            nn.ReLU(True),
+            # 256 x 256
+            nn.ConvTranspose2d(64, 3, 4, 2, 1, bias=self.bias),
+            nn.Tanh(),
+        )
+
+        return guide_decoder
 
     def _build_downsampler(self):
         """
@@ -183,8 +192,8 @@ class VggUnet(nn.Module):
         for i in reversed(range(1, len(self.cfg))):
             block = nn.Sequential(
                 nn.ConvTranspose2d(
-                    in_channels=self.cfg[i] * 2,
-                    #  (1 if i == len(self.cfg) - 1 else 2),
+                    in_channels=self.cfg[i] *
+                    (1 if i == len(self.cfg) - 1 else 2),
                     out_channels=self.cfg[i - 1],
                     kernel_size=4,
                     stride=2,
