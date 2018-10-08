@@ -1,5 +1,7 @@
 # Generative Adversarial Network On Sketch Coloring
 
+[![Build Status](https://travis-ci.com/ktaebum/NC-GAN.svg?branch=master)](https://travis-ci.com/ktaebum/NC-GAN)
+
 ## Team Members
 - Dongjae Lee
 - Hyunseok Oh
