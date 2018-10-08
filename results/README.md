@@ -35,7 +35,9 @@ Sketch - Output - Ground Truth
     Hyperparameter   | Value
     --------------   | ---------
     `learning_rate`  | `0.0002`
-    `beta1`  | `0.5`
+    `beta1 (optimizer)`  | `0.5`
+    `alpha (loss)`  | `0.3`
+    `beta (loss)`  | `0.9`
     `batch_size`  | `4`
     `lambda`  | `10`
     `epochs`  | `200`
@@ -63,7 +65,9 @@ Sketch - Output - Ground Truth
     Hyperparameter   | Value
     --------------   | ---------
     `learning_rate`  | `0.0002`
-    `beta1`  | `0.5`
+    `beta1 (optimizer)`  | `0.5`
+    `alpha (loss)`  | `0.3`
+    `beta (loss)`  | `0.9`
     `batch_size`  | `1`
     `lambda`  | `10`
     `epochs`  | `200`
