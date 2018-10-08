@@ -22,7 +22,7 @@
 
 ### Examples
 
-Sketch - Output - Ground Truth
+Sketch - Ground Truth - Output
 ![pix2pix1](https://i.imgur.com/swgvRAl.png)
 ## VGGUNet-concat Application
 ### Configuration
@@ -48,7 +48,7 @@ Sketch - Output - Ground Truth
 
 ### Examples
 
-Sketch - Output - Ground Truth
+Sketch - Ground Truth - Output
 ![vggconcat1](https://i.imgur.com/OXGhdqO.png)
 ![vggconcat2](https://i.imgur.com/EPvoVsY.png)
 ![vggconcat3](https://i.imgur.com/fnZKQfE.png)
