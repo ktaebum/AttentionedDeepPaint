@@ -1,0 +1,10 @@
+language: python
+python:
+  - "3.6"
+  - "3.7"
+
+install:
+  - pip install torch torchvision numpy
+
+script:
+  - python -m unittest discover -s "./tests" -p "*_test.py"
