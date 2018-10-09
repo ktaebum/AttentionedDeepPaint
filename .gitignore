@@ -1,3 +1,7 @@
+# for my experiment setup
+.syncignore.txt
+upload.sh
+
 # Future for report
 ### TeX ###
 ## Core latex/pdflatex auxiliary files:
