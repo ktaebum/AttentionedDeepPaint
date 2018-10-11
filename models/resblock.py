@@ -27,11 +27,12 @@ class ResBlock(nn.Module):
         @param dropout: dropout probability
         @param bias: whether use bias or not
         """
+        super(ResBlock, self).__init__()
 
         if norm == 'instance':
-            norm = nn.InstanceNorm2d
+            self.norm = nn.InstanceNorm2d
         elif norm == 'batch':
-            norm = nn.BatchNorm2d
+            self.norm = nn.BatchNorm2d
         else:
             raise ValueError('Invalid normalization layer %s' % str(norm))
 
