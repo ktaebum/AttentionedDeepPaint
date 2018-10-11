@@ -4,7 +4,7 @@ Preprocess niko dataset and generate pair image
 import os
 import glob
 
-from . import get_sketch, save_image
+from . import get_sketch, save_image, scale
 
 from PIL import Image
 
@@ -89,9 +89,8 @@ class NikoPairedDataset(Dataset):
             imageB = self.transform(imageB)
 
         # scale image into range [-1, 1]
-        imageA = (imageA * 2) - 1
-        imageB = (imageB * 2) - 1
-
+        imageA = scale(imageA)
+        imageB = scale(imageB)
         return imageA, imageB
 
 
