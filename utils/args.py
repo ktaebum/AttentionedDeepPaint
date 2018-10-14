@@ -101,6 +101,11 @@ def get_default_argparser():
         action='store_true',
     )
     parser.add_argument(
+        '--resblock',
+        help='set whether to use residual block in resunet or not',
+        action='store_true',
+    )
+    parser.add_argument(
         '--lambd',
         help='set l1 loss weight',
         metavar='',

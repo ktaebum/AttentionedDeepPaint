@@ -51,6 +51,12 @@ class VggUnet(nn.Module):
         pretrained_vgg = list(models.vgg19_bn(True).children())
         self.vgg_conv = pretrained_vgg[0]
         self.vgg_fc1 = pretrained_vgg[1][0]
+
+        for parameter in self.vgg_conv.parameters():
+            parameter.requires_grad = False
+        for parameter in self.vgg_fc1.parameters():
+            parameter.requires_grad = False
+
         self.vgg_fc2 = nn.Linear(4096, 2048, bias=bias)
 
         self.down_sampler = self._build_downsampler()
@@ -63,13 +69,18 @@ class VggUnet(nn.Module):
         self._initialize_weight()
 
     def forward(self, image, reference):
-
+        """
         # calculate for style reference
         with torch.no_grad():
             # do not train pretrained feature extraction model
             reference = self.vgg_conv(reference)
             reference = reference.reshape(reference.shape[0], -1)
             reference = self.vgg_fc1(reference)
+        reference = self.vgg_fc2(reference)
+        """
+        reference = self.vgg_conv(reference)
+        reference = reference.reshape(reference.shape[0], -1)
+        reference = self.vgg_fc1(reference)
         reference = self.vgg_fc2(reference)
 
         skip_connections = []
@@ -86,7 +97,6 @@ class VggUnet(nn.Module):
                 skip_connections.append(image)
 
         skip_connections = list(reversed(skip_connections))
-
         # concat with style reference
         reference = reference.unsqueeze(-1).unsqueeze(-1)
 

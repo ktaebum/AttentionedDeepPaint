@@ -9,6 +9,101 @@ https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/
 import torch.nn as nn
 
 
+class ShortCutMap(nn.Module):
+    """
+    Shortcut in channel, size changing residual block.
+    This is the simplest version, which use Conv2d in downsampling
+    and ConvTranspose2d in upsampling
+    """
+
+    def __init__(self, in_channels, out_channels, mode, stride=2):
+        super(ShortCutMap, self).__init__()
+
+        if mode == 'down':
+            self.sample = nn.Conv2d(
+                in_channels,
+                out_channels,
+                kernel_size=1,
+                stride=stride,
+                bias=False)
+        elif mode == 'up':
+            self.sample = nn.ConvTranspose2d(
+                in_channels,
+                out_channels,
+                kernel_size=1,
+                stride=stride,
+                output_padding=1,
+                bias=False)
+        else:
+            raise ValueError('Invalid Mode')
+
+    def forward(self, x):
+        return self.sample(x)
+
+
+class HalfResBlock(nn.Module):
+    """
+    Half downsampling residual block
+    """
+
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 norm=True,
+                 mode='down',
+                 dropout=0.5,
+                 bias=True):
+        super(HalfResBlock, self).__init__()
+
+        self.mode = mode
+        self.shortcut = ShortCutMap(in_channels, out_channels, mode)
+        if mode == 'down':
+            self.conv = nn.Conv2d
+        elif mode == 'up':
+            self.conv = nn.ConvTranspose2d
+        else:
+            raise ValueError('Invalid mode')
+
+        self.conv1 = self.conv(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=4,
+            padding=1,
+            stride=2,
+            bias=bias)
+
+        if norm:
+            self.norm1 = nn.BatchNorm2d(out_channels)
+        else:
+            self.norm1 = nn.Sequential()
+        self.relu = nn.ReLU(True)
+        self.dropout = nn.Dropout2d(
+            dropout) if dropout > 0 else nn.Sequential()
+
+        self.conv2 = self.conv(
+            in_channels=out_channels,
+            out_channels=out_channels,
+            kernel_size=3,
+            padding=1,
+            stride=1,
+            bias=bias)
+
+        if norm:
+            self.norm2 = nn.BatchNorm2d(out_channels)
+        else:
+            self.norm2 = nn.Sequential()
+
+    def forward(self, x):
+        out = self.conv1(x)
+        out = self.norm1(out)
+        out = self.relu(out)
+        out = self.dropout(out)
+        out = self.conv2(out)
+        out = self.norm2(out)
+
+        return out + self.shortcut(x)
+
+
 class ResBlock(nn.Module):
     def __init__(self,
                  channels,
