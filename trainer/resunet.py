@@ -156,8 +156,7 @@ class ResUnetTrainer(ModelTrainer):
 
             result.paste(sub_result, (0, 0 + self.resolution * i))
 
-        save_image(result, 'resunet_val_%03d' % epoch,
-                   './data/pair_niko/result')
+        save_image(result, 'res_val_%03d' % epoch, './data/pair_niko/result')
 
     def test(self):
         raise NotImplementedError
