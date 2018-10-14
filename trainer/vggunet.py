@@ -180,7 +180,7 @@ class VggUnetTrainer(ModelTrainer):
             lr=self.args.learning_rate,
             betas=(self.args.beta1, 0.999))
         optimD = optim.Adam(
-            self.generator.parameters(),
+            self.discriminator.parameters(),
             lr=self.args.learning_rate,
             betas=(self.args.beta1, 0.999))
 
@@ -208,10 +208,10 @@ class VggUnetTrainer(ModelTrainer):
         loss_G_l1 = (l1_loss(self.fakeB, self.imageB) + loss_G_guide1 +
                      loss_G_guide2) * self.args.lambd
 
-        self.loss_G_gan.update(loss_G_gan.item() * batch_size)
-        self.loss_G_guide1.update(loss_G_guide1.item() * batch_size)
-        self.loss_G_guide2.update(loss_G_guide2.item() * batch_size)
-        self.loss_G_l1.update(loss_G_l1.item() * batch_size)
+        self.loss_G_gan.update(loss_G_gan.item(), batch_size)
+        self.loss_G_guide1.update(loss_G_guide1.item(), batch_size)
+        self.loss_G_guide2.update(loss_G_guide2.item(), batch_size)
+        self.loss_G_l1.update(loss_G_l1.item(), batch_size)
 
         loss_G = loss_G_gan + loss_G_l1
 
@@ -229,13 +229,13 @@ class VggUnetTrainer(ModelTrainer):
         real_AB = torch.cat([self.imageA, self.imageB], 1)
         logit_real = self.discriminator(real_AB)
         loss_D_real = gan_loss(logit_real, True)
-        self.loss_D_real.update(loss_D_real.item() * batch_size)
+        self.loss_D_real.update(loss_D_real.item(), batch_size)
 
         # for fake image
         fake_AB = torch.cat([self.imageA, self.fakeB], 1)
         logit_fake = self.discriminator(fake_AB.detach())
         loss_D_fake = gan_loss(logit_fake, False)
-        self.loss_D_fake.update(loss_D_fake.item() * batch_size)
+        self.loss_D_fake.update(loss_D_fake.item(), batch_size)
 
         loss_D = (loss_D_real + loss_D_fake) * 0.5
         loss_D.backward()

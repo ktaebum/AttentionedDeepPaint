@@ -28,12 +28,9 @@ class AverageTracker:
     def name(self, value):
         raise AttributeError('Cannot modify name of average tracker')
 
-    def update(self, value):
-        if self.n == 0:
-            self.value = value
-        else:
-            self.value = ((self.value * self.n) + value) / (self.n + 1)
-        self.n += 1
+    def update(self, value, n=1):
+        self.value = ((self.value * self.n) + (value * n)) / (self.n + n)
+        self.n += n
 
     def get_value(self):
         return self.value

@@ -13,12 +13,15 @@ from models import HalfResBlock
 
 
 class ResUnet(nn.Module):
-    def __init__(self, bias=True, norm='batch', dropout=0.5):
+    def __init__(self, resblock=True, bias=True, norm='batch', dropout=0.5):
         super(ResUnet, self).__init__()
 
         self.dim = 64
         self.bias = bias
         self.norm = norm
+        self.resblock = resblock
+        self.guide_resolution = 16
+
         if norm == 'batch':
             self.norm_block = nn.BatchNorm2d
         elif norm == 'instance':
@@ -31,8 +34,8 @@ class ResUnet(nn.Module):
             dropout) if dropout > 0 else nn.Sequential()
 
         self.cfg = [
-            3, self.dim, self.dim * 2, self.dim * 2, self.dim * 4,
-            self.dim * 4, self.dim * 8, self.dim * 8, self.dim * 16,
+            3, self.dim, self.dim * 2, self.dim * 4, self.dim * 4,
+            self.dim * 8, self.dim * 8, self.dim * 8, self.dim * 16,
             self.dim * 32
         ]
 
@@ -47,8 +50,8 @@ class ResUnet(nn.Module):
         for parameter in self.vgg_fc1.parameters():
             parameter.requires_grad = False
 
-        self.down_sampler = self._build_downsampler()
-        self.up_sampler = self._build_upsampler()
+        self.down_sampler = self._build_downsampler(self.resblock)
+        self.up_sampler = self._build_upsampler(self.resblock)
 
         self.guide_decoder1 = self._build_guide_decoder()
         self.guide_decoder2 = self._build_guide_decoder()
@@ -70,7 +73,7 @@ class ResUnet(nn.Module):
 
         for i, layer in enumerate(self.down_sampler, 1):
             image = layer(image)
-            if image.shape[-1] == 2:
+            if image.shape[-1] == self.guide_resolution:
                 guide1 = self.guide_decoder1(image)
 
             if i < len(self.down_sampler):
@@ -88,7 +91,7 @@ class ResUnet(nn.Module):
                 image = self.dropout_block(image)
             image = torch.relu(image)
 
-            if image.shape[-1] == 2:
+            if image.shape[-1] == self.guide_resolution:
                 guide2 = self.guide_decoder2(image)
 
             image = torch.cat([image, connection], 1)
@@ -115,14 +118,23 @@ class ResUnet(nn.Module):
         """
         Build guide decoder
 
-        From 512 x 2 x 2 feature, make 3 x 512 x 512 image
+        From 512 x 16 x 16 feature, make 3 x 512 x 512 image
 
-        1024 x 2 x 2
-        512 x 4 x 4
-        512 x 8 x 8
-        256 x 16 x 16
+        512 x 16 x 16
         256 x 32 x 32
-        128 x 64 x 64
+        256 x 64 x 64
+        128 x 128 x 128
+        64 x 256 x 256
+        3 x 512 x 512
+
+        From 2048 x 2 x 2 feature, make 3 x 512 x 512 image
+
+        2048 x 2 x 2
+        1024 x 4 x 4
+        512 x 8 x 8
+        512 x 16 x 16
+        256 x 32 x 32
+        256 x 64 x 64
         128 x 128 x 128
         64 x 256 x 256
         3 x 512 x 512
@@ -142,14 +154,15 @@ class ResUnet(nn.Module):
             return block
 
         guide_decoder = nn.Sequential(
-            *guide_block(self.dim * 16, self.dim * 8),
-            *guide_block(self.dim * 8, self.dim * 8),
+            #  *guide_block(self.dim * 32, self.dim * 16),
+            #  *guide_block(self.dim * 16, self.dim * 8),
+            #  *guide_block(self.dim * 8, self.dim * 8),
             *guide_block(self.dim * 8, self.dim * 4),
             *guide_block(self.dim * 4, self.dim * 4),
             *guide_block(self.dim * 4, self.dim * 2),
-            *guide_block(self.dim * 2, self.dim * 2),
             *guide_block(self.dim * 2, self.dim),
-            *guide_block(self.dim, 3, norm=False, relu=False), nn.Tanh())
+            *guide_block(self.dim, 3, norm=False, relu=False),
+            nn.Tanh())
 
         return guide_decoder
 
