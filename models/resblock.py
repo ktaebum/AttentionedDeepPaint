@@ -49,18 +49,11 @@ class HalfResBlock(nn.Module):
     def __init__(self,
                  in_channels,
                  out_channels,
-                 norm='batch',
+                 norm=True,
                  mode='down',
                  dropout=0.5,
                  bias=True):
         super(HalfResBlock, self).__init__()
-
-        if norm == 'batch':
-            self.norm = nn.BatchNorm2d
-        elif norm == 'instance':
-            self.norm = nn.InstanceNorm2d
-        else:
-            raise ValueError('Invalid Normalization')
 
         self.mode = mode
         self.shortcut = ShortCutMap(in_channels, out_channels, mode)
@@ -79,7 +72,10 @@ class HalfResBlock(nn.Module):
             stride=2,
             bias=bias)
 
-        self.norm1 = self.norm(out_channels)
+        if norm:
+            self.norm1 = nn.BatchNorm2d(out_channels)
+        else:
+            self.norm1 = nn.Sequential()
         self.relu = nn.ReLU(True)
         self.dropout = nn.Dropout2d(
             dropout) if dropout > 0 else nn.Sequential()
@@ -92,7 +88,10 @@ class HalfResBlock(nn.Module):
             stride=1,
             bias=bias)
 
-        self.norm2 = self.norm(out_channels)
+        if norm:
+            self.norm2 = nn.BatchNorm2d(out_channels)
+        else:
+            self.norm2 = nn.Sequential()
 
     def forward(self, x):
         out = self.conv1(x)
