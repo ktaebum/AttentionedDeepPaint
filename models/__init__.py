@@ -4,6 +4,7 @@ from models.vggunet import VggUnet
 from models.resblock import ResBlock, HalfResBlock
 from models.resgen import ResidualGenerator
 from models.resunet import ResUnet
+from models.style2paint import StylePaintGenerator, StylePaintDiscriminator
 
 __all__ = [
     'Pix2PixGenerator',
@@ -13,4 +14,6 @@ __all__ = [
     'ResidualGenerator',
     'HalfResBlock',
     'ResUnet',
+    'StylePaintGenerator',
+    'StylePaintDiscriminator',
 ]
