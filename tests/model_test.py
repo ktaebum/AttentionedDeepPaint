@@ -3,6 +3,7 @@ import unittest
 import torch
 
 from models import Pix2PixGenerator, ResBlock, HalfResBlock, ResUnet
+from models import StylePaintGenerator
 
 
 class ModelTest(unittest.TestCase):
@@ -41,6 +42,17 @@ class ModelTest(unittest.TestCase):
 
         # generate half upsampled shape
         self.assertEqual(tuple(outputs.shape), (1, 3, 16, 16))
+
+    def test_style2paint(self):
+        generator = StylePaintGenerator()
+        image = torch.randn(1, 3, 512, 512)
+        style = torch.randn(1, 4096)
+
+        output, guide1, guide2 = generator(image, style)
+
+        self.assertEqual(tuple(output.shape), (1, 3, 512, 512))
+        self.assertEqual(tuple(guide1.shape), (1, 3, 512, 512))
+        self.assertEqual(tuple(guide2.shape), (1, 3, 512, 512))
 
     def test_resunet(self):
         generator = ResUnet()
