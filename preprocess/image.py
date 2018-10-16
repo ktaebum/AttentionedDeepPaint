@@ -4,7 +4,10 @@ Image Preprocessing/Processing Module
 
 import os
 
+import torch
+
 from PIL import ImageOps, ImageFilter, Image
+from torchvision import transforms
 
 __valid_smooth__ = {'no', 'basic', 'more'}
 
@@ -94,3 +97,22 @@ def re_scale(image):
     """
 
     return (image + 1) * 0.5
+
+
+def grayscale_tensor(images, device):
+    def grayscale_tensor_(image):
+        """
+        Grayscale image of tensor
+        """
+
+        image = image.detach().cpu()
+        image = re_scale(image)
+        transform = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.Grayscale(3),
+            transforms.ToTensor()
+        ])
+        image = transform(image)
+        return scale(image)
+
+    return torch.stack(list(map(grayscale_tensor_, images))).to(device)
