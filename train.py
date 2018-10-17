@@ -28,7 +28,6 @@ def main(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     train_transform = transforms.Compose([
-        transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
     ])
     val_transform = transforms.Compose([
@@ -57,7 +56,8 @@ def main(args):
     if args.train:
         last_iter = -1
 
-        for epoch in range(args.num_epochs):
+        for epoch in range(args.last_epoch + 1,
+                           args.last_epoch + 1 + args.num_epochs):
             last_iter = trainer.train(last_iter)
 
             if args.save_every > 0 and epoch % args.save_every == 0:

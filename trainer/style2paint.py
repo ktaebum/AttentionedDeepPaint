@@ -12,10 +12,11 @@ from PIL import Image
 from trainer.trainer import ModelTrainer
 
 from models import StylePaintGenerator, StylePaintDiscriminator
+from models import PatchGAN
 
 from utils import GANLoss
 from utils import load_checkpoints, save_checkpoints
-from utils import AverageTracker
+from utils import AverageTracker, ImagePooling
 
 from preprocess import centor_crop_tensor, re_scale
 from preprocess import save_image, grayscale_tensor
@@ -29,8 +30,9 @@ class Style2PaintTrainer(ModelTrainer):
         self.resolution = self.args.resolution
         self.generator = StylePaintGenerator(norm=self.args.norm).to(
             self.device)
-        self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
-            self.device)
+        #  self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
+        #      self.device)
+        self.discriminator = PatchGAN(sigmoid=self.args.no_mse).to(self.device)
 
         # set optimizers
         self.optimizers = self._set_optimizers()
@@ -43,6 +45,9 @@ class Style2PaintTrainer(ModelTrainer):
         self.vgg_features = vgg.features
         self.vgg_fc1 = vgg.classifier[0]
 
+        # set image pooler
+        self.image_pool = ImagePooling(50)
+
         for param in self.vgg_features.parameters():
             param.requires_grad = False
         for param in self.vgg_fc1.parameters():
@@ -50,9 +55,13 @@ class Style2PaintTrainer(ModelTrainer):
 
         # load pretrained model
         if self.args.pretrainedG != '':
+            if self.args.verbose:
+                print('load pretrained generator...')
             load_checkpoints(self.args.pretrainedG, self.generator,
                              self.optimizers['G'])
         if self.args.pretrainedD != '':
+            if self.args.verbose:
+                print('load pretrained discriminator...')
             load_checkpoints(self.args.pretrainedD, self.discriminator,
                              self.optimizers['D'])
 
@@ -84,6 +93,8 @@ class Style2PaintTrainer(ModelTrainer):
             self.loss_G_gan, self.loss_D_fake, self.loss_D_real,
             self.loss_G_guide1, self.loss_G_guide2, self.loss_G_l1
         ]
+        self.generator.train()
+        self.discriminator.train()
         for tracker in average_trackers:
             tracker.initialize()
         for i, datas in enumerate(self.data_loader, last_iteration):
@@ -122,6 +133,8 @@ class Style2PaintTrainer(ModelTrainer):
         return i
 
     def validate(self, dataset, epoch, samples=3):
+        self.generator.eval()
+        self.discriminator.eval()
         length = len(dataset)
 
         # sample images
@@ -223,7 +236,8 @@ class Style2PaintTrainer(ModelTrainer):
         batch_size = self.imageA.shape[0]
 
         optimG.zero_grad()
-        logit_fake = self.discriminator(self.fakeB)
+        fake_AB = torch.cat([self.imageA, self.fakeB], 1)
+        logit_fake = self.discriminator(fake_AB)
         loss_G_gan = gan_loss(logit_fake, True)
 
         grayscaled = grayscale_tensor(self.imageB, self.device)
@@ -251,17 +265,18 @@ class Style2PaintTrainer(ModelTrainer):
         optimD.zero_grad()
 
         # for real image
-        logit_real = self.discriminator(self.imageB)
-        #  vgg_real = self.extract_vgg_features(self.imageB)
-        #  loss_D_real = gan_loss(logit_real + 1 - vgg_real, True)
+        real_AB = torch.cat([self.imageA, self.imageB], 1)
+        logit_real = self.discriminator(real_AB)
         loss_D_real = gan_loss(logit_real, True)
         self.loss_D_real.update(loss_D_real.item(), batch_size)
 
         # for fake image
-        logit_fake = self.discriminator(self.fakeB.detach())
+        fakeB = self.image_pool(self.fakeB)
+        fake_AB = torch.cat([self.imageA, fakeB], 1)
+        logit_fake = self.discriminator(fake_AB.detach())
         loss_D_fake = gan_loss(logit_fake, False)
         self.loss_D_fake.update(loss_D_fake.item(), batch_size)
 
-        loss_D = (loss_D_real + loss_D_fake)
+        loss_D = (loss_D_real + loss_D_fake) * 0.5
         loss_D.backward()
         optimD.step()
