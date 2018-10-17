@@ -3,17 +3,6 @@ PathchGAN implementation on Pytorch
 
 Following paper's implementation, using 70 x 70 patchgan
 In our case, since we use 512 x 512 image, the final layer of patchgan should
-provides 1 x 8 x 8 logit.
-
-Architecture configuration
-
-6 x 512 x 512
-64 x 256 x 256
-128 x 128 x 128
-256 x 64 x 64
-512 x 32 x 32
-1024 x 16 x 16
-1 x 8 x 8
 """
 
 import torch.nn as nn
@@ -33,12 +22,22 @@ class PatchGAN(nn.Module):
 
         self.layers = nn.ModuleList()
 
+        # self.dim x 256 x 256
         self.block1 = self._building_block(6, self.dim, False)
+
+        # self.dim * 2 x 128 x 128
         self.block2 = self._building_block(self.dim, self.dim * 2)
+
+        # self.dim * 4 x 64 x 64
         self.block3 = self._building_block(self.dim * 2, self.dim * 4)
-        self.block4 = self._building_block(
-            self.dim * 4, self.dim * 8, stride=1)
-        self.block5 = nn.Sequential(
+
+        # self.dim * 8 x 32 x 32
+        self.block4 = self._building_block(self.dim * 4, self.dim * 8)
+
+        # self.dim * 8 x 16 x 16
+        self.block5 = self._building_block(self.dim * 8, self.dim * 8)
+
+        self.block6 = nn.Sequential(
             nn.Conv2d(self.dim * 8, 1, 4, 1, 1),
             nn.Sigmoid() if sigmoid else nn.Sequential())
 
@@ -52,6 +51,7 @@ class PatchGAN(nn.Module):
         image = self.block3(image)
         image = self.block4(image)
         image = self.block5(image)
+        image = self.block6(image)
 
         return image
 
