@@ -16,6 +16,12 @@ def get_default_argparser():
         type=int,
         default=10)
     parser.add_argument(
+        '--last-epoch',
+        help='set last epoch of training (default: 0)',
+        metavar='',
+        type=int,
+        default=0)
+    parser.add_argument(
         '--num-epochs',
         help='set number of total epochs',
         metavar='',
@@ -80,12 +86,6 @@ def get_default_argparser():
     parser.add_argument(
         '--save-name',
         help='set model save name (effective if and only if save_every > 0)',
-        metavar='',
-        type=str,
-        default='')
-    parser.add_argument(
-        '--pretrained',
-        help='set pretrained model to load',
         metavar='',
         type=str,
         default='')
