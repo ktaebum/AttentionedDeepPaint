@@ -82,3 +82,32 @@ Sketch - Style - Output - Ground Truth
 ![vggadd2](https://i.imgur.com/vUMMc2u.png)
 ![vggadd3](https://i.imgur.com/9t9JFTC.png)
 
+
+## Style2Paint Application
+### Configuration
+  - Using Style2Paint Original Paper (But using patch-gan discriminator)
+  - Add 2 guide decoder
+  - Train Setting
+
+    Hyperparameter   | Value
+    --------------   | ---------
+    `learning_rate`  | `0.0002`
+    `beta1 (optimizer)`  | `0.5`
+    `alpha (loss)`  | `0.3`
+    `beta (loss)`  | `0.9`
+    `batch_size`  | `4`
+    `lambda`  | `50`
+    `epochs`  | `200`
+    `learning_rate schedule`  | `None`
+
+### Problem
+  - Still, cannot import style reference well...
+  - Noisy background appear
+  - How to solve :(
+
+### Examples
+Sketch - Style - Guide1 - Guide2 - Output - Ground Truth
+![style2paint1](https://i.imgur.com/VbIceI6.png)
+![style2paint2](https://i.imgur.com/QXgcFgC.png)
+![style2paint3](https://i.imgur.com/waWRxUY.png)
+![style2paint4](https://i.imgur.com/RbAafXs.png)
