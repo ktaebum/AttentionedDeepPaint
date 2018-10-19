@@ -96,7 +96,7 @@ class NikoPairedDataset(Dataset):
 
 if __name__ == "__main__":
     # here comes generating sketch images
-    img_files = glob.glob('./data/niko/**/*.jpg', recursive=True)
+    img_files = glob.glob('./data/toprocess/*.jpg', recursive=True)
     for file in img_files:
         filename = file.split('/')[-1][:-4]
         print('Processing %s' % file)
