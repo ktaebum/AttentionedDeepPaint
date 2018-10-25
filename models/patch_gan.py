@@ -34,10 +34,7 @@ class PatchGAN(nn.Module):
         # self.dim * 8 x 32 x 32
         self.block4 = self._building_block(self.dim * 4, self.dim * 8)
 
-        # self.dim * 8 x 16 x 16
-        self.block5 = self._building_block(self.dim * 8, self.dim * 8)
-
-        self.block6 = nn.Sequential(
+        self.block5 = nn.Sequential(
             nn.Conv2d(self.dim * 8, 1, 4, 1, 1),
             nn.Sigmoid() if sigmoid else nn.Sequential())
 
@@ -51,7 +48,6 @@ class PatchGAN(nn.Module):
         image = self.block3(image)
         image = self.block4(image)
         image = self.block5(image)
-        image = self.block6(image)
 
         return image
 

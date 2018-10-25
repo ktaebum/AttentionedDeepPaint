@@ -106,7 +106,8 @@ class HalfResBlock(nn.Module):
 
 class ResBlock(nn.Module):
     def __init__(self,
-                 channels,
+                 in_channels,
+                 out_channels=None,
                  pad_type='normal',
                  norm='instance',
                  dropout=0.5,
@@ -115,7 +116,8 @@ class ResBlock(nn.Module):
         Constructor for residual block.
         Each block has two convolutional layers
 
-        @param channels: input & output channels
+        @param in_channels: input channels
+        @param out_channels: output channels. If None, same with input_channels
         @param pad_type: padding type (default as 'normal')
             Reflection ('reflect'), Replication ('replicate') available
         @param norm: normalization of conv layer (instance or batch)
@@ -134,17 +136,29 @@ class ResBlock(nn.Module):
         self.pad_type = pad_type
         self.block = []
 
+        if out_channels is None:
+            out_channels = in_channels
+            self.shrink_channel = None
+        else:
+            self.shrink_channel = nn.Conv2d(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                kernel_size=1,
+                padding=0,
+                stride=1,
+                bias=False)
+
         # first conv
         padding = self._add_padding_layer()
         self.block.append(
             nn.Conv2d(
-                channels,
-                channels,
+                in_channels,
+                out_channels,
                 kernel_size=3,
                 padding=padding,
                 bias=bias,
             ))
-        self.block.append(self.norm(channels))
+        self.block.append(self.norm(in_channels))
         self.block.append(nn.ReLU(True))
 
         # add dropout
@@ -155,17 +169,19 @@ class ResBlock(nn.Module):
         padding = self._add_padding_layer()
         self.block.append(
             nn.Conv2d(
-                channels,
-                channels,
+                out_channels,
+                out_channels,
                 kernel_size=3,
                 padding=padding,
                 bias=bias,
             ))
-        self.block.append(self.norm(channels))
+        self.block.append(self.norm(out_channels))
         self.block = nn.Sequential(*self.block)
 
     def forward(self, x):
         out = self.block(x)
+        if self.shrink_channel is not None:
+            x = self.shrink_channel(x)
         return out + x
 
     def _add_padding_layer(self):

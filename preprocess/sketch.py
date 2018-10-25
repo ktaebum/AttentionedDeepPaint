@@ -62,7 +62,7 @@ def simplify_paired_image(image):
     return simplified_concat
 
 
-def get_sketch(image, smooth='basic'):
+def get_sketch(image, smooth='basic', smooth_iter=1):
     """
     From input image file, get sketched (edge) version of input image
 
@@ -89,7 +89,8 @@ def get_sketch(image, smooth='basic'):
     image = ImageOps.grayscale(image)
     image = image.filter(ImageFilter.FIND_EDGES)
     if smooth_filter is not None:
-        image = image.filter(smooth_filter)
+        for _ in range(smooth_iter):
+            image = image.filter(smooth_filter)
     image = ImageOps.invert(image)
 
     return image

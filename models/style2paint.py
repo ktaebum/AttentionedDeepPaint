@@ -9,7 +9,7 @@ import torch.nn as nn
 class StylePaintDiscriminator(nn.Module):
     def __init__(self, sigmoid=True):
         super(StylePaintDiscriminator, self).__init__()
-        self.dim = 32
+        self.dim = 64
         self.sigmoid = sigmoid
 
         layers = []
@@ -33,13 +33,14 @@ class StylePaintDiscriminator(nn.Module):
 
         # self.dim * 16 x 4 x 4
         layers.append(self._single_conv_block(self.dim * 16, self.dim * 16))
-        # 1 x 1 x 1
+
+        # self.dim * 16 x 1 x 1
         layers.append(
             nn.Conv2d(
                 self.dim * 16,
                 1,
-                kernel_size=1,
-                stride=4,
+                kernel_size=4,
+                stride=1,
                 padding=0,
                 bias=False))
 

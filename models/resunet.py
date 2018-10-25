@@ -9,7 +9,192 @@ import torch.nn as nn
 
 from torchvision import models
 
-from models import HalfResBlock
+from models import HalfResBlock, ResBlock
+
+
+class ResidualUnet(nn.Module):
+    def __init__(self, bias=True, norm='batch', dropout=0.5):
+        super(ResidualUnet, self).__init__()
+        self.dim = 32
+        self.bias = bias
+        self.guide_resolution = 8
+        self.bridge_channel = 2048
+        if norm == 'batch':
+            self.norm = nn.BatchNorm2d
+        elif norm == 'instance':
+            self.norm = nn.InstanceNorm2d
+        else:
+            self.norm = None
+
+        self.downsampler = self._build_downsampler()
+        self.down_res1 = ResBlock(self.dim * 16)
+        self.down_res2 = ResBlock(self.dim * 16)
+        self.to_bridge = nn.Sequential(
+            nn.Conv2d(
+                self.dim * 16, self.bridge_channel, 4, 2, 1, bias=self.bias),
+            self.norm(self.bridge_channel)
+            if self.norm is not None else nn.Sequential(),
+            nn.LeakyReLU(0.2, True))
+        self.from_bridge = nn.Sequential(
+            nn.ConvTranspose2d(
+                self.bridge_channel, self.dim * 16, 4, 2, 1, bias=self.bias),
+            self.norm(self.dim * 16)
+            if self.norm is not None else nn.Sequential(), nn.ReLU(True))
+        self.up_res1 = ResBlock(self.dim * 16 * 2, self.dim * 16)
+        self.up_res2 = ResBlock(self.dim * 16 * 2, self.dim * 16)
+        self.upsampler = self._build_upsampler()
+
+        self.guide_decoder1 = nn.Sequential(*self._build_upsampler(False))
+        self.guide_decoder2 = nn.Sequential(*self._build_upsampler(False))
+
+        # for feature embedding from vggnet
+        if self.bridge_channel != 4096:
+            self.feature_embed = nn.Sequential(
+                nn.Linear(4096, self.bridge_channel, bias=self.bias))
+        else:
+            self.feature_embed = None
+
+        for module in self.modules():
+            if isinstance(module, nn.Conv2d):
+                nn.init.normal_(module.weight, 0, 0.02)
+                if module.bias is not None:
+                    nn.init.zeros_(module.bias)
+            elif isinstance(module, nn.ConvTranspose2d):
+                nn.init.normal_(module.weight, 0, 0.02)
+                if module.bias is not None:
+                    nn.init.zeros_(module.bias)
+
+    def forward(self, image, style):
+        if self.feature_embed is not None:
+            style = self.feature_embed(style)
+        style = style.unsqueeze(-1).unsqueeze(-1)
+
+        skip_connections = []
+
+        # run downsampling
+        for layer in self.downsampler:
+            image = layer(image)
+            skip_connections.append(image)
+
+        # resblock region
+        image = self.down_res1(image)
+        skip_connections.append(image)
+        image = self.down_res2(image)
+        skip_connections.append(image)
+
+        # extract guide image 1
+        guide1 = self.guide_decoder1(image)
+
+        # mid bridge
+        image = self.to_bridge(image)
+        image = image + style
+        image = self.from_bridge(image)
+
+        # extract guide image 2
+        guide2 = self.guide_decoder2(image)
+
+        # reblock region
+        image = torch.cat([image, skip_connections[-1]], 1)
+        image = self.up_res1(image)
+        image = torch.cat([image, skip_connections[-2]], 1)
+        image = self.up_res2(image)
+
+        # run upsampling
+        for connection, layer in zip(
+                reversed(skip_connections[:-2]), self.upsampler):
+            image = torch.cat([image, connection], 1)
+            image = layer(image)
+
+        return image, guide1, guide2
+
+    def _build_downsampler(self):
+        """
+        input: 512 x 512 x 3
+        layer1: 256 x 256 x self.dim
+        layer2: 128 x 128 x self.dim * 2
+        layer3: 64 x 64 x self.dim * 4
+        layer4: 32 x 32 x seif.dim * 8
+        layer5: 16 x 16 x self.dim * 16
+        layer6: 8 x 8 x self.dim * 16
+        """
+
+        def downsample_block(in_channels, out_channels, is_first=False):
+            layers = []
+            layers.append(
+                nn.Conv2d(
+                    in_channels=in_channels,
+                    out_channels=out_channels,
+                    kernel_size=4,
+                    stride=2,
+                    padding=1,
+                    bias=self.bias))
+            if not is_first:
+                if self.norm is not None:
+                    layers.append(self.norm(out_channels))
+            layers.append(nn.LeakyReLU(0.2, True))
+            return nn.Sequential(*layers)
+
+        layers = nn.ModuleList()
+        layers.append(downsample_block(3, self.dim, True))
+        layers.append(downsample_block(self.dim, self.dim * 2))
+        layers.append(downsample_block(self.dim * 2, self.dim * 4))
+        layers.append(downsample_block(self.dim * 4, self.dim * 8))
+        layers.append(downsample_block(self.dim * 8, self.dim * 16))
+        layers.append(downsample_block(self.dim * 16, self.dim * 16))
+
+        return layers
+
+    def _build_upsampler(self, skip_connection=True):
+        """
+        skip connected upsampler
+        input: 8 x 8 x self.dim * 16
+        layer1: 16 x 16 x self.dim * 16
+        layer2: 32 x 32 x self.dim * 8
+        layer3: 64 x 64 x self.dim * 4
+        layer4: 128 x 128 x self.dim * 2
+        layer5: 256 x 256 x self.dim
+        layer6: 512 x 512 x 3
+        """
+
+        def upsample_block(in_channels,
+                           out_channels,
+                           dropout=False,
+                           is_last=False):
+            layers = []
+            layers.append(
+                nn.ConvTranspose2d(
+                    in_channels=in_channels,
+                    out_channels=out_channels,
+                    kernel_size=4,
+                    stride=2,
+                    padding=1,
+                    bias=self.bias))
+            if is_last:
+                layers.append(nn.Tanh())
+            else:
+                if self.norm is not None:
+                    layers.append(self.norm(out_channels))
+                if dropout:
+                    layers.append(nn.Dropout2d(0.5))
+                layers.append(nn.ReLU(True))
+            return nn.Sequential(*layers)
+
+        layers = nn.ModuleList()
+        channel_scale = 2 if skip_connection else 1
+        layers.append(
+            upsample_block(self.dim * 16 * channel_scale, self.dim * 16))
+        layers.append(
+            upsample_block(self.dim * 16 * channel_scale, self.dim * 8))
+        layers.append(
+            upsample_block(self.dim * 8 * channel_scale, self.dim * 4))
+        layers.append(
+            upsample_block(self.dim * 4 * channel_scale, self.dim * 2))
+        layers.append(
+            upsample_block(self.dim * 2 * channel_scale, self.dim * 1))
+        layers.append(
+            upsample_block(self.dim * 1 * channel_scale, 3, is_last=True))
+
+        return layers
 
 
 class ResUnet(nn.Module):

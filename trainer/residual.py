@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.backends.cudnn as cudnn
 
 import random
 
@@ -11,8 +12,9 @@ from PIL import Image
 
 from trainer.trainer import ModelTrainer
 
-from models import StylePaintGenerator, StylePaintDiscriminator
 from models import PatchGAN
+from models import ResidualUnet
+from models import StylePaintDiscriminator
 
 from utils import GANLoss
 from utils import load_checkpoints, save_checkpoints
@@ -22,17 +24,16 @@ from preprocess import centor_crop_tensor, re_scale
 from preprocess import save_image, grayscale_tensor
 
 
-class Style2PaintTrainer(ModelTrainer):
+class ResidualTrainer(ModelTrainer):
     def __init__(self, *args):
-        super(Style2PaintTrainer, self).__init__(*args)
+        super(ResidualTrainer, self).__init__(*args)
 
         # build model
         self.resolution = self.args.resolution
-        self.generator = StylePaintGenerator(norm=self.args.norm).to(
-            self.device)
+        self.generator = ResidualUnet(norm=self.args.norm).to(self.device)
+        #  self.discriminator = PatchGAN(sigmoid=self.args.no_mse).to(self.device)
         self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
             self.device)
-        #  self.discriminator = PatchGAN(sigmoid=self.args.no_mse).to(self.device)
 
         # set optimizers
         self.optimizers = self._set_optimizers()
@@ -64,11 +65,13 @@ class Style2PaintTrainer(ModelTrainer):
                 print('load pretrained discriminator...')
             load_checkpoints(self.args.pretrainedD, self.discriminator,
                              self.optimizers['D'])
-
+        """
         if self.device.type == 'cuda':
-            # enable parallel computation
-            self.generator = nn.DataParallel(self.generator)
-            self.discriminator = nn.DataParallel(self.discriminator)
+            # enable data parallel computation
+            self.generator = nn.DataParallel(self.generator.cuda())
+            self.discriminator = nn.DataParallel(self.discriminator.cuda())
+            cudnn.benchmark = True
+        """
 
         # loss values for tracking
         self.loss_G_gan = AverageTracker('loss_G_gan')
@@ -184,7 +187,7 @@ class Style2PaintTrainer(ModelTrainer):
 
             result.paste(sub_result, (0, 0 + self.resolution * i))
 
-        save_image(result, 'style2paint_val_%03d' % epoch,
+        save_image(result, 'residual_val_%03d' % epoch,
                    './data/pair_niko/result')
 
     def test(self):
@@ -237,8 +240,8 @@ class Style2PaintTrainer(ModelTrainer):
 
         optimG.zero_grad()
         """
+        for patchGAN
         fake_AB = torch.cat([self.imageA, self.fakeB], 1)
-        logit_fake = self.discriminator(fake_AB)
         """
         logit_fake = self.discriminator(self.fakeB)
         loss_G_gan = gan_loss(logit_fake, True)
@@ -269,8 +272,8 @@ class Style2PaintTrainer(ModelTrainer):
 
         # for real image
         """
+        for patchGAN
         real_AB = torch.cat([self.imageA, self.imageB], 1)
-        logit_real = self.discriminator(real_AB)
         """
         logit_real = self.discriminator(self.imageB)
         loss_D_real = gan_loss(logit_real, True)
@@ -278,9 +281,9 @@ class Style2PaintTrainer(ModelTrainer):
 
         # for fake image
         """
+        for patchGAN
         fakeB = self.image_pool(self.fakeB)
         fake_AB = torch.cat([self.imageA, fakeB], 1)
-        logit_fake = self.discriminator(fake_AB.detach())
         """
         logit_fake = self.discriminator(self.fakeB.detach())
         loss_D_fake = gan_loss(logit_fake, False)
