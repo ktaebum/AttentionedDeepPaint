@@ -47,16 +47,6 @@ class VggUnet(nn.Module):
         else:
             raise ValueError('Invalid Resolution')
 
-        # get pretrained vgg net
-        pretrained_vgg = list(models.vgg19_bn(True).children())
-        self.vgg_conv = pretrained_vgg[0]
-        self.vgg_fc1 = pretrained_vgg[1][0]
-
-        for parameter in self.vgg_conv.parameters():
-            parameter.requires_grad = False
-        for parameter in self.vgg_fc1.parameters():
-            parameter.requires_grad = False
-
         self.vgg_fc2 = nn.Linear(4096, 2048, bias=bias)
 
         self.down_sampler = self._build_downsampler()
@@ -78,9 +68,6 @@ class VggUnet(nn.Module):
             reference = self.vgg_fc1(reference)
         reference = self.vgg_fc2(reference)
         """
-        reference = self.vgg_conv(reference)
-        reference = reference.reshape(reference.shape[0], -1)
-        reference = self.vgg_fc1(reference)
         reference = self.vgg_fc2(reference)
 
         skip_connections = []

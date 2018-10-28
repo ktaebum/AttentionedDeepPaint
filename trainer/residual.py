@@ -31,9 +31,10 @@ class ResidualTrainer(ModelTrainer):
         # build model
         self.resolution = self.args.resolution
         self.generator = ResidualUnet(norm=self.args.norm).to(self.device)
-        #  self.discriminator = PatchGAN(sigmoid=self.args.no_mse).to(self.device)
-        self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
-            self.device)
+        self.discriminator = PatchGAN(
+            dim=64, sigmoid=self.args.no_mse).to(self.device)
+        #  self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
+        #      self.device)
 
         # set optimizers
         self.optimizers = self._set_optimizers()
@@ -46,13 +47,13 @@ class ResidualTrainer(ModelTrainer):
         self.vgg_features = vgg.features
         self.vgg_fc1 = vgg.classifier[0]
 
-        # set image pooler
-        self.image_pool = ImagePooling(50)
-
         for param in self.vgg_features.parameters():
             param.requires_grad = False
         for param in self.vgg_fc1.parameters():
             param.requires_grad = False
+
+        # image pooling
+        self.image_pool = ImagePooling()
 
         # load pretrained model
         if self.args.pretrainedG != '':
@@ -116,22 +117,22 @@ class ResidualTrainer(ModelTrainer):
             self._update_discriminator()
             self._update_generator()
 
-            if self.args.verbose and i % self.args.print_every == 0:
-                print(
-                    '%s = %f, %s = %f, %s = %f, %s = %f, %s = %f, %s = %f' % (
-                        self.loss_D_real.name,
-                        self.loss_D_real(),
-                        self.loss_D_fake.name,
-                        self.loss_D_fake(),
-                        self.loss_G_gan.name,
-                        self.loss_G_gan(),
-                        self.loss_G_l1.name,
-                        self.loss_G_l1(),
-                        self.loss_G_guide1.name,
-                        self.loss_G_guide1(),
-                        self.loss_G_guide2.name,
-                        self.loss_G_guide2(),
-                    ))
+            #  if self.args.verbose and i % self.args.print_every == 0:
+        if self.args.verbose:
+            print('%s = %f, %s = %f, %s = %f, %s = %f, %s = %f, %s = %f' % (
+                self.loss_D_real.name,
+                self.loss_D_real(),
+                self.loss_D_fake.name,
+                self.loss_D_fake(),
+                self.loss_G_gan.name,
+                self.loss_G_gan(),
+                self.loss_G_l1.name,
+                self.loss_G_l1(),
+                self.loss_G_guide1.name,
+                self.loss_G_guide1(),
+                self.loss_G_guide2.name,
+                self.loss_G_guide2(),
+            ))
 
         return i
 
@@ -241,9 +242,11 @@ class ResidualTrainer(ModelTrainer):
         optimG.zero_grad()
         """
         for patchGAN
-        fake_AB = torch.cat([self.imageA, self.fakeB], 1)
         """
-        logit_fake = self.discriminator(self.fakeB)
+        fake_AB = torch.cat([self.imageA, self.fakeB], 1)
+        logit_fake = self.discriminator(fake_AB)
+
+        #  logit_fake = self.discriminator(self.fakeB)
         loss_G_gan = gan_loss(logit_fake, True)
 
         grayscaled = grayscale_tensor(self.imageB, self.device)
@@ -273,19 +276,21 @@ class ResidualTrainer(ModelTrainer):
         # for real image
         """
         for patchGAN
-        real_AB = torch.cat([self.imageA, self.imageB], 1)
         """
-        logit_real = self.discriminator(self.imageB)
+        real_AB = torch.cat([self.imageA, self.imageB], 1)
+        logit_real = self.discriminator(real_AB)
+        #  logit_real = self.discriminator(self.imageB)
         loss_D_real = gan_loss(logit_real, True)
         self.loss_D_real.update(loss_D_real.item(), batch_size)
 
         # for fake image
         """
         for patchGAN
-        fakeB = self.image_pool(self.fakeB)
-        fake_AB = torch.cat([self.imageA, fakeB], 1)
         """
-        logit_fake = self.discriminator(self.fakeB.detach())
+        fake_AB = torch.cat([self.imageA, self.fakeB], 1)
+        fake_AB = self.image_pool(fake_AB)
+        logit_fake = self.discriminator(fake_AB.detach())
+        #  logit_fake = self.discriminator(self.fakeB.detach())
         loss_D_fake = gan_loss(logit_fake, False)
         self.loss_D_fake.update(loss_D_fake.item(), batch_size)
 

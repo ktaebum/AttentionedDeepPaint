@@ -80,8 +80,8 @@ class StylePaintGenerator(nn.Module):
 
         self.bias = bias
         self.dropout = dropout
-        self.dim = 32
-        self.bottleneck_channel = 4096
+        self.dim = 16
+        self.bottleneck_channel = 2048
 
         if norm == 'batch':
             self.norm = nn.BatchNorm2d
@@ -109,6 +109,8 @@ class StylePaintGenerator(nn.Module):
             if self.norm is not None else nn.Sequential(),
         )
 
+        self.embedding = nn.Linear(4096, self.bottleneck_channel)
+
         self.up_sampler = self._build_upsampler()
 
         self.last_layer = nn.Sequential(
@@ -127,6 +129,7 @@ class StylePaintGenerator(nn.Module):
 
     def forward(self, image, style):
         # make dimension (1, 4096, 1, 1)
+        style = self.embedding(style)
         style = style.unsqueeze(-1).unsqueeze(-1)
 
         skip_connections = []
@@ -148,7 +151,7 @@ class StylePaintGenerator(nn.Module):
 
         # add style
         image = image + style
-        image = nn.LeakyReLU(0.2, True)(image)
+        image = torch.relu(image)
 
         skip_connections = list(reversed(skip_connections))
 

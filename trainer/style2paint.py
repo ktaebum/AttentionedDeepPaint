@@ -12,6 +12,8 @@ from PIL import Image
 from trainer.trainer import ModelTrainer
 
 from models import StylePaintGenerator, StylePaintDiscriminator
+from models import VggUnet
+from models import ResidualUnet
 from models import PatchGAN
 
 from utils import GANLoss
@@ -30,9 +32,11 @@ class Style2PaintTrainer(ModelTrainer):
         self.resolution = self.args.resolution
         self.generator = StylePaintGenerator(norm=self.args.norm).to(
             self.device)
-        self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
-            self.device)
-        #  self.discriminator = PatchGAN(sigmoid=self.args.no_mse).to(self.device)
+        #  self.generator = VggUnet(512, norm='instance').to(self.device)
+        #  self.generator = ResidualUnet(norm=self.args.norm).to(self.device)
+        #  self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
+        #      self.device)
+        self.discriminator = PatchGAN(sigmoid=self.args.no_mse).to(self.device)
 
         # set optimizers
         self.optimizers = self._set_optimizers()
@@ -236,11 +240,9 @@ class Style2PaintTrainer(ModelTrainer):
         batch_size = self.imageA.shape[0]
 
         optimG.zero_grad()
-        """
         fake_AB = torch.cat([self.imageA, self.fakeB], 1)
         logit_fake = self.discriminator(fake_AB)
-        """
-        logit_fake = self.discriminator(self.fakeB)
+        #  logit_fake = self.discriminator(self.fakeB)
         loss_G_gan = gan_loss(logit_fake, True)
 
         grayscaled = grayscale_tensor(self.imageB, self.device)
@@ -268,21 +270,17 @@ class Style2PaintTrainer(ModelTrainer):
         optimD.zero_grad()
 
         # for real image
-        """
         real_AB = torch.cat([self.imageA, self.imageB], 1)
         logit_real = self.discriminator(real_AB)
-        """
-        logit_real = self.discriminator(self.imageB)
+        #  logit_real = self.discriminator(self.imageB)
         loss_D_real = gan_loss(logit_real, True)
         self.loss_D_real.update(loss_D_real.item(), batch_size)
 
         # for fake image
-        """
-        fakeB = self.image_pool(self.fakeB)
-        fake_AB = torch.cat([self.imageA, fakeB], 1)
+        fake_AB = torch.cat([self.imageA, self.fakeB], 1)
+        fake_AB = self.image_pool(fake_AB)
         logit_fake = self.discriminator(fake_AB.detach())
-        """
-        logit_fake = self.discriminator(self.fakeB.detach())
+        #  logit_fake = self.discriminator(self.fakeB.detach())
         loss_D_fake = gan_loss(logit_fake, False)
         self.loss_D_fake.update(loss_D_fake.item(), batch_size)
 

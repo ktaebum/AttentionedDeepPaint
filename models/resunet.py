@@ -15,7 +15,7 @@ from models import HalfResBlock, ResBlock
 class ResidualUnet(nn.Module):
     def __init__(self, bias=True, norm='batch', dropout=0.5):
         super(ResidualUnet, self).__init__()
-        self.dim = 32
+        self.dim = 64
         self.bias = bias
         self.guide_resolution = 8
         self.bridge_channel = 2048
@@ -27,8 +27,10 @@ class ResidualUnet(nn.Module):
             self.norm = None
 
         self.downsampler = self._build_downsampler()
+        """
         self.down_res1 = ResBlock(self.dim * 16)
         self.down_res2 = ResBlock(self.dim * 16)
+        """
         self.to_bridge = nn.Sequential(
             nn.Conv2d(
                 self.dim * 16, self.bridge_channel, 4, 2, 1, bias=self.bias),
@@ -40,8 +42,10 @@ class ResidualUnet(nn.Module):
                 self.bridge_channel, self.dim * 16, 4, 2, 1, bias=self.bias),
             self.norm(self.dim * 16)
             if self.norm is not None else nn.Sequential(), nn.ReLU(True))
+        """
         self.up_res1 = ResBlock(self.dim * 16 * 2, self.dim * 16)
         self.up_res2 = ResBlock(self.dim * 16 * 2, self.dim * 16)
+        """
         self.upsampler = self._build_upsampler()
 
         self.guide_decoder1 = nn.Sequential(*self._build_upsampler(False))
@@ -75,12 +79,13 @@ class ResidualUnet(nn.Module):
         for layer in self.downsampler:
             image = layer(image)
             skip_connections.append(image)
-
+        """
         # resblock region
         image = self.down_res1(image)
         skip_connections.append(image)
         image = self.down_res2(image)
         skip_connections.append(image)
+        """
 
         # extract guide image 1
         guide1 = self.guide_decoder1(image)
@@ -92,16 +97,17 @@ class ResidualUnet(nn.Module):
 
         # extract guide image 2
         guide2 = self.guide_decoder2(image)
-
+        """
         # reblock region
         image = torch.cat([image, skip_connections[-1]], 1)
         image = self.up_res1(image)
         image = torch.cat([image, skip_connections[-2]], 1)
         image = self.up_res2(image)
+        """
 
         # run upsampling
         for connection, layer in zip(
-                reversed(skip_connections[:-2]), self.upsampler):
+                reversed(skip_connections), self.upsampler):
             image = torch.cat([image, connection], 1)
             image = layer(image)
 
@@ -116,6 +122,8 @@ class ResidualUnet(nn.Module):
         layer4: 32 x 32 x seif.dim * 8
         layer5: 16 x 16 x self.dim * 16
         layer6: 8 x 8 x self.dim * 16
+
+        optional layer7: 4 x 4 x self.dim * 16
         """
 
         def downsample_block(in_channels, out_channels, is_first=False):
@@ -142,12 +150,14 @@ class ResidualUnet(nn.Module):
         layers.append(downsample_block(self.dim * 8, self.dim * 16))
         layers.append(downsample_block(self.dim * 16, self.dim * 16))
 
+        layers.append(downsample_block(self.dim * 16, self.dim * 16))
+
         return layers
 
     def _build_upsampler(self, skip_connection=True):
         """
         skip connected upsampler
-        input: 8 x 8 x self.dim * 16
+        input: 8 x 8 x self.dim * 16 (or 4 x 4 x self.dim * 16)
         layer1: 16 x 16 x self.dim * 16
         layer2: 32 x 32 x self.dim * 8
         layer3: 64 x 64 x self.dim * 4
@@ -181,12 +191,19 @@ class ResidualUnet(nn.Module):
 
         layers = nn.ModuleList()
         channel_scale = 2 if skip_connection else 1
+        dropout = True
         layers.append(
-            upsample_block(self.dim * 16 * channel_scale, self.dim * 16))
+            upsample_block(self.dim * 16 * channel_scale, self.dim * 16,
+                           dropout))
         layers.append(
-            upsample_block(self.dim * 16 * channel_scale, self.dim * 8))
+            upsample_block(self.dim * 16 * channel_scale, self.dim * 16,
+                           dropout))
         layers.append(
-            upsample_block(self.dim * 8 * channel_scale, self.dim * 4))
+            upsample_block(self.dim * 16 * channel_scale, self.dim * 8,
+                           dropout))
+        layers.append(
+            upsample_block(self.dim * 8 * channel_scale, self.dim * 4,
+                           dropout))
         layers.append(
             upsample_block(self.dim * 4 * channel_scale, self.dim * 2))
         layers.append(

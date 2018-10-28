@@ -70,10 +70,10 @@ class NikoPairedDataset(Dataset):
         if height_pad < 0:
             height_pad = 0
 
-        # padding as white
+        # padding as black
         padding = transforms.Pad((width_pad // 2, height_pad // 2 + 1,
                                   width_pad // 2 + 1, height_pad // 2),
-                                 (255, 255, 255))
+                                 (0, 0, 0))
 
         # use center crop
         crop = transforms.CenterCrop(self.size)

@@ -10,7 +10,7 @@ from PIL import Image
 
 from trainer.trainer import ModelTrainer
 
-from models import PatchGAN, VggUnet
+from models import PatchGAN, VggUnet, StylePaintDiscriminator
 
 from utils import GANLoss
 from utils import load_checkpoints, save_checkpoints
@@ -29,9 +29,11 @@ class VggUnetTrainer(ModelTrainer):
         self.generator = VggUnet(
             resolution=self.resolution, dim=self.args.dim,
             norm=self.args.norm).to(self.device)
-        self.discriminator = PatchGAN(
-            dim=self.args.dim, norm=self.args.norm,
-            sigmoid=self.args.no_mse).to(self.device)
+        #  self.discriminator = PatchGAN(
+        #  dim=self.args.dim, norm=self.args.norm,
+        #      sigmoid=self.args.no_mse).to(self.device)
+        self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
+            self.device)
 
         # set optimizers
         self.optimizers = self._set_optimizers()
