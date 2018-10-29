@@ -1,116 +1,56 @@
-\documentclass[runningheads]{llncs}
+\documentclass[10pt,twocolumn,letterpaper]{article}
 
-%% Save the class definition of \subparagraph
-\let\llncssubparagraph\subparagraph
-%% Provide a definition to \subparagraph to keep titlesec happy
-\let\subparagraph\paragraph
-%% Load titlesec
-\usepackage{titlesec}
-%\titleformat{\section}{\normalfont\bfseries}{\thesection}{1em}{}
-\titlespacing*{\section}{0pt}{*1.5}{*1.5}
-\titlespacing*{\subsection}{0pt}{*1.3}{*1.3}
-\titlespacing*{\subsubsection}{0pt}{*1.0}{*1.0}
-%% Revert \subparagraph to the llncs definition
-\let\subparagraph\llncssubparagraph
-
+\usepackage{../style/cvpr}
+\usepackage{times}
+\usepackage{epsfig}
 \usepackage{graphicx}
-\usepackage{tikz}
-\usepackage{float}
-\usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{blindtext}
-\usepackage{tabularx}
-\usepackage[utf8]{inputenc}
-\usepackage{url}
 
-\usepackage{wasysym}
-\usepackage{multirow}
+% Include other packages here, before hyperref.
 
-%\usepackage{multicol}
+% If you comment hyperref and then uncomment it, you should delete
+% egpaper.aux before re-running latex.  (Or just hit 'q' on the first latex
+% run, let it finish, and you should be clear).
+\usepackage[breaklinks=true,bookmarks=false]{hyperref}
 
-\usepackage{algorithm}
-\usepackage{algorithmic}
-\renewcommand{\algorithmicrequire}{\textbf{Input:}}
-\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\cvprfinalcopy % *** Uncomment this line for the final submission
 
-\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
-\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
-\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\def\httilde{\mbox{\tt\raisebox{-.5ex}{\symbol{126}}}}
 
-\def\mathbi#1{\textbf{\em #1}}
-\graphicspath{{./images/}}
-
-\usetikzlibrary{shapes, arrows}
-
-%tikz style
-\tikzstyle{decision} = [diamond, draw,
-    text width=7em, text badly centered, node distance=3cm, inner sep=0pt]
-\tikzstyle{block} = [rectangle, draw,
-    text width=6em, text centered, rounded corners, minimum height=4em]
-\tikzstyle{line} = [draw, -latex']
-\tikzstyle{cloud} = [draw, ellipse, node distance=3cm,
-    minimum height=2em]
-\tikzstyle{arrow} = [thick,->,>=stealth]
-
-\newcommand{\red}[1]{\textcolor{red}{#1}}
-\newcommand{\blue}[1]{\textcolor{blue}{#1}}
-\newcommand{\methodlong}[0]{Adversarial Layerwise Compression}
-\newcommand{\method}[0]{\textsc{AlCom}\xspace}
-\DeclareMathOperator*{\argmin}{arg\,min}
-
-%\titlespacing*{\section}{0pt}{1.1\baselineskip}{\baselineskip}
-
-%\setlength{\floatsep}{0.05cm}
-%\setlength{\textfloatsep}{0.05cm}
-%\setlength{\intextsep}{0.05cm}
-%\setlength{\dblfloatsep}{0.05cm}
-%\setlength{\dbltextfloatsep}{0.05cm}
-%\setlength{\abovecaptionskip}{0.05cm}
-%\setlength{\belowcaptionskip}{0.05cm}
-%\setlength{\abovedisplayskip}{0.05cm}
-%\setlength{\belowdisplayskip}{0.05cm}
-
-
-
-
+\ifcvprfinal\pagestyle{empty}\fi
 \begin{document}
-\title{Adversarial Layerwise Compression of Deep Neural Networks
+
+%%%%%%%%% TITLE
+\title{Automatic Sketch Colorization Using Generative Adversarial Network}
+
+\author{Taebum Kim
+\qquad
+Hyunseok Oh
+\qquad
+Dongjae Lee\\
+\\
+Dept. of Physics \& Astronomy, Seoul National University\\
+{\tt\small \{k.taebum, \}@snu.ac.kr}
 }
-%\titlerunning{Abbreviated paper title}
-% If the paper title is too long for the running head, you can set
-% an abbreviated paper title here
 
-%\author{Taebum Kim}
-%
-%\authorrunning{Kim}
-%\institute{Seoul National University \\
-%\email{k.taebum@snu.ac.kr}}
+\maketitle
+%\thispagestyle{empty}
 
-\maketitle              % typeset the header of the contribution
-
+%%%%%%%%% ABSTRACT
 \begin{abstract}
-
-Given a neural network, how can we find low-rank approximations of its hidden layers with tolerable loss of accuracy?
-Compressing neural networks is a crucial task for deploying recent models in mobile platforms or embedded systems that have limited resources.
-A tensor decomposition is one of the most successful ways of compressing neural networks and has been recently exploited for compressing various types of convolutional or recurrent neural networks.
-In this paper, we propose \methodlong{} (\method{}), a novel approach to compress a neural network by the tensor decomposition and layerwise knowledge distillation.
-\method{} is a general algorithm that is applicable to any neural network with any tensor decomposition model.
-Our extensive experiments show that \method{} consistently outperforms the state-of-the-art method based on Tucker decomposition on various models and datasets for classifying images such as MNIST and CIFAR100.
-
-\keywords{Neural network \and Model compression \and Tensor decomposition \and Knowledge distillation \and Adversarial training}
 \end{abstract}
 
+%%%%%%%%% BODY TEXT
 \input{010intro}
-
 \input{020related}
+\input{030achievement}
+\input{040future}
 
-\input{030method}
-
-\input{040experiment}
-
-\input{050conclusion}
-
-\bibliographystyle{splncs04}
-\bibliography{bib}
+{\small
+\bibliographystyle{ieee}
+\bibliography{egbib}
+}
 \end{document}
+
+
