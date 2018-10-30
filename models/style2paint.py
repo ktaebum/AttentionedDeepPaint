@@ -14,7 +14,7 @@ class StylePaintDiscriminator(nn.Module):
 
         layers = []
         # self.dim x 256 x 256
-        layers.append(self._single_conv_block(3, self.dim, False))
+        layers.append(self._single_conv_block(6, self.dim, False))
 
         # self.dim * 2 x 128 x 128
         layers.append(self._single_conv_block(self.dim, self.dim * 2))
@@ -23,21 +23,21 @@ class StylePaintDiscriminator(nn.Module):
         layers.append(self._single_conv_block(self.dim * 2, self.dim * 4))
 
         # self.dim * 8 x 32 x 32
-        layers.append(self._single_conv_block(self.dim * 4, self.dim * 8))
+        layers.append(self._single_conv_block(self.dim * 4, self.dim * 4))
 
         # self.dim * 8 x 16 x16
-        layers.append(self._single_conv_block(self.dim * 8, self.dim * 8))
+        layers.append(self._single_conv_block(self.dim * 4, self.dim * 4))
 
         # self.dim * 16 x 8 x 8
-        layers.append(self._single_conv_block(self.dim * 8, self.dim * 16))
+        layers.append(self._single_conv_block(self.dim * 4, self.dim * 4))
 
         # self.dim * 16 x 4 x 4
-        layers.append(self._single_conv_block(self.dim * 16, self.dim * 16))
+        layers.append(self._single_conv_block(self.dim * 4, self.dim * 8))
 
         # self.dim * 16 x 1 x 1
         layers.append(
             nn.Conv2d(
-                self.dim * 16,
+                self.dim * 8,
                 1,
                 kernel_size=4,
                 stride=1,
@@ -189,10 +189,9 @@ class StylePaintGenerator(nn.Module):
         layers.append(guide_block(self.dim * 16, self.dim * 8))
         layers.append(guide_block(self.dim * 8, self.dim * 4))
         layers.append(guide_block(self.dim * 4, self.dim * 2))
-        layers.append(guide_block(self.dim * 2, self.dim * 1))
         layers.append(
             nn.Sequential(
-                nn.Conv2d(self.dim * 1, 3, 7, 1, 3, bias=self.bias),
+                nn.ConvTranspose2d(self.dim * 2, 3, 4, 2, 1, bias=self.bias),
                 nn.Tanh()))
 
         return nn.Sequential(*layers)

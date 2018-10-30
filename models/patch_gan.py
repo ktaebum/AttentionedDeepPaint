@@ -37,7 +37,7 @@ class PatchGAN(nn.Module):
 
         # self.dim * 16 x 16 x16
         self.block5 = self._building_block(
-            self.dim * 8, self.dim * 8, stride=8)
+            self.dim * 8, self.dim * 8, stride=1)
 
         self.block6 = nn.Sequential(
             nn.Conv2d(self.dim * 8, 1, 4, 1, 1),
