@@ -1,4 +1,4 @@
-\documentclass[10pt,twocolumn,letterpaper]{article}
+\documentclass[10pt,letterpaper]{article}
 
 \usepackage{../style/cvpr}
 \usepackage{times}
@@ -6,13 +6,24 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{kotex}
+\usepackage{multicol}
 
+\usepackage{ifpdf}
+\ifpdf
+\usepackage{dhucs-cmap}
+\pdfmapfile{=myttf-pdftex.map}
+\fi
 % Include other packages here, before hyperref.
 
 % If you comment hyperref and then uncomment it, you should delete
 % egpaper.aux before re-running latex.  (Or just hit 'q' on the first latex
 % run, let it finish, and you should be clear).
 \usepackage[breaklinks=true,bookmarks=false]{hyperref}
+
+\renewcommand\thesection{\Alph{section}}
+\renewcommand\thesubsection{\thesection.\arabic{subsection}}
+\renewcommand\thesubsubsection{\thesubsection.\arabic{subsubsection}}
 
 \cvprfinalcopy % *** Uncomment this line for the final submission
 
@@ -24,33 +35,46 @@
 %%%%%%%%% TITLE
 \title{Automatic Sketch Colorization Using Generative Adversarial Network}
 
-\author{Taebum Kim
+\author{김태범
 \qquad
-Hyunseok Oh
+오현석
 \qquad
-Dongjae Lee\\
+이동재\\
 \\
-Dept. of Physics \& Astronomy, Seoul National University\\
+서울대학교 물리천문학부\\
+창의적 통합설계 1 중간 보고서 \\
 {\tt\small \{k.taebum, \}@snu.ac.kr}
 }
 
 \maketitle
-%\thispagestyle{empty}
-
 %%%%%%%%% ABSTRACT
 \begin{abstract}
 \end{abstract}
 
+
+\tableofcontents
+
+\pagebreak
 %%%%%%%%% BODY TEXT
-\input{010intro}
-\input{020related}
-\input{030achievement}
-\input{040future}
+
+\begin{multicols}{2}
+\input{B_intro}
+\input{C_background}
+\input{D_problem}
+\input{E_approach}
+\input{F_architecture}
+\input{G_implementation}
+\input{H_current}
+\input{I_future}
+\input{J_division}
+\input{K_schedule}
+
 
 {\small
 \bibliographystyle{ieee}
 \bibliography{egbib}
 }
+\end{multicols}
 \end{document}
 
 
