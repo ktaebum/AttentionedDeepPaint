@@ -1,55 +1,104 @@
-\documentclass[10pt,letterpaper]{article}
-
-\usepackage{../style/cvpr}
-\usepackage{times}
-\usepackage{epsfig}
-\usepackage{graphicx}
+\documentclass[11pt]{article}
+\usepackage[english]{babel}
+\usepackage{url}
+\usepackage[utf8x]{inputenc}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{vmargin}
+\usepackage{times}
+\usepackage{epsfig}
 \usepackage{kotex}
 \usepackage{multicol}
-
+\usepackage{float}
+\usepackage{booktabs}
 \usepackage{ifpdf}
+\usepackage{enumitem}
+\usepackage{setspace}
+\usepackage[hangul]{dhucs}
+\usepackage[default]{dhucs-interword}
+\usehangulfontspec{default}
+\usepackage[hangul]{dhucs-setspace}
+
+\setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
+
+
+% paragraph indent
+\setlength{\parindent}{15pt}
+% paragraph spacing
+\setlength{\parskip}{1em}
+
 \ifpdf
 \usepackage{dhucs-cmap}
 \pdfmapfile{=myttf-pdftex.map}
 \fi
-% Include other packages here, before hyperref.
 
-% If you comment hyperref and then uncomment it, you should delete
-% egpaper.aux before re-running latex.  (Or just hit 'q' on the first latex
-% run, let it finish, and you should be clear).
 \usepackage[breaklinks=true,bookmarks=false]{hyperref}
 
 \renewcommand\thesection{\Alph{section}}
 \renewcommand\thesubsection{\thesection.\arabic{subsection}}
 \renewcommand\thesubsubsection{\thesubsection.\arabic{subsubsection}}
 
-\cvprfinalcopy % *** Uncomment this line for the final submission
+%\cvprfinalcopy % *** Uncomment this line for the final submission
 
 \def\httilde{\mbox{\tt\raisebox{-.5ex}{\symbol{126}}}}
 
-\ifcvprfinal\pagestyle{empty}\fi
+%\ifcvprfinal\pagestyle{empty}\fi
+\title{Automatic Sketch Colorization\\
+	\Large Using Generative Adversarial Network}
+
+%\author{김태범
+%	\qquad
+%	오현석
+%	\qquad
+%	이동재\\
+%	\\
+%	서울대학교 물리천문학부\\
+%	창의적 통합설계 1 중간 보고서 \\
+%	{\tt\small \{k.taebum, \}@snu.ac.kr}
+%}
+
+\makeatletter
+\let\thetitle\@title
+\let\theauthor\@author
+\let\thedate\@date
+\makeatother
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{창의적 통합설계 1}
+\lhead{Automatic Sketch Colorization}
+\cfoot{\thepage}
 \begin{document}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{titlepage}
+	\centering
+	\vspace*{0.0cm}			% Course Code
+	%\rule{\linewidth}{0.5 mm} \\[0.1 cm]
+	\textsc{ \Huge \bfseries \thetitle}\\
+	%\rule{\linewidth}{0.5 mm} \\[1.5 cm]
+	\vspace*{12.0cm}
+	
+	\begin{minipage}{0.9\textwidth}
+		\begin{flushright} \large
+			Team D \\
+			김태범, 오현석, 이동재 \\
+			서울대학교 컴퓨터공학부 신영길 교수님\\
+			NCSoft AI Vision Lab 강현우
+		\end{flushright}
+		
+	\end{minipage}\\[2 cm]
+\end{titlepage}
+
 %%%%%%%%% TITLE
-\title{Automatic Sketch Colorization Using Generative Adversarial Network}
 
-\author{김태범
-\qquad
-오현석
-\qquad
-이동재\\
-\\
-서울대학교 물리천문학부\\
-창의적 통합설계 1 중간 보고서 \\
-{\tt\small \{k.taebum, \}@snu.ac.kr}
-}
-
-\maketitle
+\pagebreak
 %%%%%%%%% ABSTRACT
-\begin{abstract}
-\end{abstract}
 
 
 \tableofcontents
@@ -57,7 +106,8 @@
 \pagebreak
 %%%%%%%%% BODY TEXT
 
-\begin{multicols}{2}
+%\begin{multicols}{2}
+\input{A_abstract}
 \input{B_intro}
 \input{C_background}
 \input{D_problem}
@@ -74,7 +124,7 @@
 \bibliographystyle{ieee}
 \bibliography{egbib}
 }
-\end{multicols}
+%\end{multicols}
 \end{document}
 
 
