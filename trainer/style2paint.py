@@ -284,6 +284,6 @@ class Style2PaintTrainer(ModelTrainer):
         loss_D_fake = gan_loss(logit_fake, False)
         self.loss_D_fake.update(loss_D_fake.item(), batch_size)
 
-        loss_D = (loss_D_real + loss_D_fake) * 0.5
+        loss_D = (loss_D_real + loss_D_fake) * 0.25
         loss_D.backward()
         optimD.step()
