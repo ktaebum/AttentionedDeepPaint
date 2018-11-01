@@ -26,7 +26,7 @@
 \subsubsection{Edge Detection}
 
 이제 전체 데이터셋에 대하여, 우리가 가진 것은 색칠된 (colorized) 이미지 파일들이기 때문에, 학습을 위한 이미지쌍 (sketch, colorized)를 만들고자 하였다. 그러기 위해 잘 알려진 여러 edge detection 알고리즘을 사용하기로 결정하였다.
-우리가 선택한 것은 Saining Xie와 Zhuowen Tu가 제안한 Holistically-Nested Edge Detection (HED) \cite{Saining2015}, OpenCv의 Canny Edge Detection \cite{opencv}, 그리고 Python Imaging Library (PIL)의 Edge Detection 알고리즘이다 \cite{pillow}. 각각의 그림의 결과는 Figure \ref{fig:edge_detection}에서 확인할 수 있다.
+우리가 선택한 것은 Saining Xie와 Zhuowen Tu가 제안한 Holistically-Nested Edge Detection (HED) \cite{Saining2015}, OpenCv의 Canny Edge Detection \cite{opencv}, 그리고 Python Imaging Library (PIL)의 Edge Detection 알고리즘이다 \cite{pillow}. 각각의 그림의 결과는 그림 \ref{fig:edge_detection}에서 확인할 수 있다.
 \begin{figure}[t]
 	\centering
 	\includegraphics[width=\textwidth]{edge}
@@ -38,7 +38,7 @@
 그러나 이 방법만 적용하기에는 스케치라기엔 거친 느낌이 강해서, 이를 완화할 수 있는 추가적인 처리 과정을 강구하였다.
 이를 위해 적용한 방법은 두 가지이다.
 첫 번째는 Edgar Simo-Serra 외 3명이 제안한 딥러닝 기반의 Sketch Simplification 기술이고 \cite{SimoSerraTOG2018}, 두 번째는 PIL의 자체 이미지 smoothing 필터를 적용하였다.
-하지만 Sketch Simplification은 전체적으로 스케치 이미지를 불분명하게 만드는 효과가 있었고, smoothing 필터를 적용한 이미지는, 초기의 거친 느낌을 잡아주었기 때문에, 최종적으로는 PIL edge detection - PIL Smoothing Filter를 sketch 이미지를 만드는 것으로 사용하기로 결정했다.
+하지만 Sketch Simplification은 전체적으로 스케치 이미지를 불분명하게 만드는 효과가 있었고, smoothing 필터를 적용한 이미지는, 초기의 거친 느낌을 잡아주었기 때문에, 최종적으로는 PIL edge detection - PIL Smoothing Filter를 sketch 이미지를 만드는 것으로 사용하기로 결정했다 (그림 \ref{fig:edge_smooth}).
 \begin{figure}[t]
 	\centering
 	\includegraphics[width=\textwidth]{smooth}
@@ -46,7 +46,8 @@
 	\label{fig:edge_smooth}
 \end{figure}
 
-\subsubsection{Image Resizing}
+\subsubsection{Image Resizing/Scaling}
+
 
 \subsection{Model Reproduction}
 
