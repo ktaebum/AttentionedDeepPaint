@@ -23,6 +23,7 @@
 \usepackage[default]{dhucs-interword}
 \usehangulfontspec{default}
 \usepackage[hangul]{dhucs-setspace}
+\usepackage{tabularx}
 
 \setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
 
@@ -35,6 +36,12 @@
 \usepackage{dhucs-cmap}
 \pdfmapfile{=myttf-pdftex.map}
 \fi
+
+% table spacing
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+
 
 \usepackage[breaklinks=true,bookmarks=false]{hyperref}
 
