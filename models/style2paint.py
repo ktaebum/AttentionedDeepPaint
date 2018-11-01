@@ -80,7 +80,7 @@ class StylePaintGenerator(nn.Module):
 
         self.bias = bias
         self.dropout = dropout
-        self.dim = 16
+        self.dim = 32
         self.bottleneck_channel = 2048
 
         self.relu = nn.ReLU(True)
@@ -102,7 +102,7 @@ class StylePaintGenerator(nn.Module):
         # from down_sampler to mid_layer (bottleneck)
         self.to_bottleneck = nn.Sequential(
             nn.Conv2d(
-                self.dim * 16,
+                self.dim * 32,
                 self.bottleneck_channel,
                 4,
                 2,
@@ -115,7 +115,7 @@ class StylePaintGenerator(nn.Module):
         self.from_bottleneck = nn.Sequential(
             nn.ConvTranspose2d(
                 self.bottleneck_channel,
-                self.dim * 16,
+                self.dim * 32,
                 4,
                 2,
                 1,
@@ -190,8 +190,9 @@ class StylePaintGenerator(nn.Module):
             return nn.Sequential(*layers)
 
         layers = []
-        first_in_channels = self.dim * 16 if is_first else self.dim * 32
-        layers.append(guide_block(first_in_channels, self.dim * 16))
+        first_in_channels = self.dim * 32 if is_first else self.dim * 64
+        layers.append(guide_block(first_in_channels, self.dim * 32))
+        layers.append(guide_block(self.dim * 32, self.dim * 16))
         layers.append(guide_block(self.dim * 16, self.dim * 8))
         layers.append(guide_block(self.dim * 8, self.dim * 4))
         layers.append(guide_block(self.dim * 4, self.dim * 2))
@@ -209,8 +210,11 @@ class StylePaintGenerator(nn.Module):
 
         layers = nn.ModuleList()
         layers.append(
-            SingleLayerUpSampleBlock(self.bottleneck_channel, self.dim * 16,
+            SingleLayerUpSampleBlock(self.bottleneck_channel, self.dim * 32,
                                      self.bias, True))
+        layers.append(
+            SingleLayerUpSampleBlock(self.dim * 32 + self.dim * 32,
+                                     self.dim * 16, self.bias, True))
         layers.append(
             SingleLayerUpSampleBlock(self.dim * 16 + self.dim * 16,
                                      self.dim * 8, self.bias, True))
@@ -238,6 +242,9 @@ class StylePaintGenerator(nn.Module):
             SingleLayerDownSampleBlock(self.dim * 4, self.dim * 8, self.bias))
         layers.append(
             SingleLayerDownSampleBlock(self.dim * 8, self.dim * 16, self.bias))
+        layers.append(
+            SingleLayerDownSampleBlock(self.dim * 16, self.dim * 32,
+                                       self.bias))
         return layers
 
 
