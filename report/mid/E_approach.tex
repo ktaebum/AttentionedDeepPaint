@@ -1,7 +1,7 @@
 \section{Approach}
 
 더 좋은 모델을 만들기 위해서는, 우선 기존의 모델들에 대한 이해가 충분히 되어야 한다고 판단을 하였다.
-따라서 중간평가 기간까지는, 데이터셋을 수집하고, 전처리를 진행하고, 우선적으로 기존의 우수한 채색 모델을 재생산 하는 것에 초점을 두었다.
+따라서 중간평가 기간까지는, 데이터셋을 수집하고, 전처리를 진행하고, 우선적으로 기존의 우수한 image translation 모델 (pix2pix \cite{phillip2017})과, 채색 모델을 재생산 하는 것에 초점을 두었다 (style2paint \cite{Zhang2017}).
 
 \subsection{Collect Dataset}
 
@@ -48,11 +48,20 @@
 
 \subsubsection{Image Resizing/Scaling}
 
+Danbooru 2017 데이터셋은 모든 이미지가 우리가 정한 512 x 512 픽셀 사이즈이지만, Niko 데이터셋은 이미지 별로 사이즈가 천차만별이다.
+따라서 우리는 이에대해 학습 및 추론시, 추가적인 resize작업과, scaling 작업이 진행될 수 있도록 하였다.
+Resize 작업에 대해서는, 주어진 이미지 파일의 가로 (세로) 길이 중 512 픽셀이 안 되는 쪽이 있다면 그 방향에 대해서는 양 옆으로 검은색으로 패딩해주었다.
+흰색이 아니라 검은색으로 패딩한 이유는, Danbooru 2017 데이터셋 이미지들이 검은색으로 패딩이 되기 때문에 이를 맞춰주었다.
+그 후 이미지의 중심을 기준으로 512 x 512 크기로 잘라서, 딥러닝 모델에 input으로 들어갈 수 있도록 하였다 (Center Crop).
+
+이미지 scaling은 Phillip Isola \cite{phillip2017}등 다른 일반적인 image translation 문제에서 사용하는 방법을 사용하였다. 하나의 RGB 픽셀 값이 가질 수 있는 값은 $[0, 255]$ 사이의 정수 값이므로 원래의 픽셀 값은 $p$, scale된 픽셀 값을 $\hat{p}$라고 하자. Generator 모델에서 마지막 레이어의 feature가 tanh 비선형 활성함수를 통과하기 때문에
+\begin{align}
+	\hat{p} = (2 \times \frac{p}{255.0}) - 1 && \text{where $p \in [0, 255]$ integer value}
+\end{align}
+이와 같이 scale될 수 있도록 하였다. 이렇게 하면 $\hat{p} \in [-1, 1]$을 만족하는 실수 값이 되고, 이는 실제 이미지와 만들어진 가짜 이미지가 가질 수 있는 픽셀 값의 범위를 같게 만들게 된다.
 
 \subsection{Model Reproduction}
 
 \subsubsection{Pix2Pix}
-
-\subsubsection{CycleGAN}
 
 \subsubsection{Style2Paint}
