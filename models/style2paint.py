@@ -9,7 +9,7 @@ import torch.nn as nn
 class StylePaintDiscriminator(nn.Module):
     def __init__(self, sigmoid=True):
         super(StylePaintDiscriminator, self).__init__()
-        self.dim = 64
+        self.dim = 32
         self.sigmoid = sigmoid
 
         layers = []
@@ -112,16 +112,6 @@ class StylePaintGenerator(nn.Module):
             if self.norm is not None else nn.Sequential(),
         )
         self.embedding = nn.Linear(4096, self.bottleneck_channel)
-        self.from_bottleneck = nn.Sequential(
-            nn.ConvTranspose2d(
-                self.bottleneck_channel,
-                self.dim * 32,
-                4,
-                2,
-                1,
-                bias=self.bias),
-            self.norm(self.dim * 16)
-            if self.norm is not None else nn.Sequential())
 
         self.up_sampler = self._build_upsampler()
 
@@ -162,7 +152,7 @@ class StylePaintGenerator(nn.Module):
         image = self.to_bottleneck(image)
         # add style
         image = image + style
-        image = self.lrelu(image)
+        image = self.relu(image)
 
         for i, (layer, connection) in enumerate(
                 zip(self.up_sampler, skip_connections)):

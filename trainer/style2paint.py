@@ -34,9 +34,9 @@ class Style2PaintTrainer(ModelTrainer):
             self.device)
         #  self.generator = VggUnet(512, norm='instance').to(self.device)
         #  self.generator = ResidualUnet(norm=self.args.norm).to(self.device)
-        #  self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
-        #      self.device)
-        self.discriminator = PatchGAN(sigmoid=self.args.no_mse).to(self.device)
+        self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
+            self.device)
+        #  self.discriminator = PatchGAN(sigmoid=self.args.no_mse).to(self.device)
 
         # set optimizers
         self.optimizers = self._set_optimizers()
@@ -230,13 +230,15 @@ class Style2PaintTrainer(ModelTrainer):
     def _set_losses(self):
         gan_loss = GANLoss(not self.args.no_mse).to(self.device)
         l1_loss = nn.L1Loss().to(self.device)
+        content_loss = nn.MSELoss().to(self.device)
 
-        return {'GAN': gan_loss, 'L1': l1_loss}
+        return {'GAN': gan_loss, 'L1': l1_loss, 'Content': content_loss}
 
     def _update_generator(self):
         optimG = self.optimizers['G']
         gan_loss = self.losses['GAN']
         l1_loss = self.losses['L1']
+        content_loss = self.losses['Content']
         batch_size = self.imageA.shape[0]
 
         optimG.zero_grad()
@@ -248,7 +250,7 @@ class Style2PaintTrainer(ModelTrainer):
         grayscaled = grayscale_tensor(self.imageB, self.device)
 
         loss_G_guide1 = l1_loss(self.guide1, grayscaled) * self.args.alpha
-        loss_G_guide2 = l1_loss(self.guide2, self.imageB) * self.args.beta
+        loss_G_guide2 = content_loss(self.guide2, self.imageB) * self.args.beta
         loss_G_l1 = (l1_loss(self.fakeB, self.imageB) + loss_G_guide1 +
                      loss_G_guide2) * self.args.lambd
 
@@ -284,6 +286,6 @@ class Style2PaintTrainer(ModelTrainer):
         loss_D_fake = gan_loss(logit_fake, False)
         self.loss_D_fake.update(loss_D_fake.item(), batch_size)
 
-        loss_D = (loss_D_real + loss_D_fake) * 0.25
+        loss_D = (loss_D_real + loss_D_fake) * 0.5
         loss_D.backward()
         optimD.step()

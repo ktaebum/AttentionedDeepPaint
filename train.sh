@@ -20,8 +20,8 @@
 #       --pretrainedD style2paintD_190.pth.tar --last-epoch 190
 
 python train.py --learning-rate 0.0002 --beta1 0.5 --verbose \
-       --batch-size 4 --save-every 50 --lambd 100 --train --model style2paint \
-       --sample 3 --no-mse --norm batch --num-epochs 400 \
+       --batch-size 4 --save-every 50 --lambd 10 --train --model style2paint \
+       --sample 3 --no-mse --norm batch --num-epochs 400 --print-every 50 \
 
 # residual training
 # python train.py --learning-rate 0.0002 --beta1 0.5 --verbose --alpha 0.3 \
