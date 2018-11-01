@@ -1,24 +1,40 @@
 \section{Implementation Spec}
 
-\begin{table}[H]
-	\label{tab:library_spec}
-	\caption{라이브러리 스}
+이 장에선, 이전 장(\ref{sec:archi})에서 구현한 모델들이 어떠한 스펙 상에서 구현되었는지와, 어떻게 학습이 되었는지를 서술한다. 기본적으로 모든 언어는 Python 3.6.6 상에서 작성되었다. 사용한 모든 외부 라이브러리에 대한 정보는, 표 \ref{tab:library_spec}에서 확인할 수 있다.
+\begin{table}[t]
+	\caption{라이브러리 스펙}
 	\centering
-	\begin{tabular}{|C{2.0cm}|C{2.0cm}|L{8.0cm}|}
+	\begin{tabular}{|C{2.0cm}|C{2.0cm}|L{11.0cm}|}
 		\toprule
-		\textbf{라이브러리} & \textbf{버전} & \textbf{URL)} \\
+		\textbf{라이브러리} & \textbf{버전} & \textbf{URL} \\
 		\toprule
 		Pytorch & 0.4.1 & \url{https://pytorch.org/} \\
-		Pillow & 5.3.0 & \url{https://pillow.readthedocs.io/en/5.3.x/}\\
-		Numpy & 1.15.2 & 
-	\end{tabular}
+		PIL & 5.1.0 & \url{https://pillow.readthedocs.io/en/5.1.x/}\\
+		Numpy & 1.14.5 &  \url{https://docs.scipy.org/doc/numpy-1.14.5/}\\
+		\bottomrule	
+\end{tabular}
+\label{tab:library_spec}
 \end{table}
 
-\begin{table}[H]
-	\label{tab:training_spec}
+학습을 진행한 기계의 하드웨어 스펙은, Intel Xeon(R) E5-2630 CPU, GTX 1080TI GPU를 이용하여 학습하였다.
+학습에 사용한 여러 파라미터 값들은, 표 \ref{tab:training_spec}에서 확인할 수 있다.
+
+\begin{table}[t]
 	\caption{학습 하이퍼파라미터}
 	\centering
-	\begin{tabular}{|C{2.0cm}|C{2.0cm}|C{2.0cm}|}
-		\textbf{제목} & \textbf{설명} & \textbf{url} \\
+	\begin{tabular}{|C{3.0cm}|C{2.0cm}|L{10.0cm}|}
+		\toprule
+		\textbf{파라미터} & \textbf{값} & \textbf{설명} \\
+		\toprule
+		Learning Rate & 0.0002 & Decay는 사용되지 않음 (고정 learning rate) \\
+		$\alpha$ & 0.3 & Guide Decoder 1의 loss weight \\
+		$\beta$ & 0.9 & Guide Decoder 2의 loss weight \\
+		$\lambda$ & 30 & L1 loss 전체에 대한 weight \\
+		Epochs & 200 & 전체 학습 epoch 수\\
+		$\beta_{1}$ & 0.5 & Adam optimizer의 $\beta_{1}$ \\
+		Batch Size & 4 & - \\
+		Normalization & Batch & Instead of InstanceNorm \\
+		\bottomrule
 	\end{tabular}
+\label{tab:training_spec}
 \end{table}
