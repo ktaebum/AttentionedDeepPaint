@@ -5,8 +5,10 @@ Image Preprocessing/Processing Module
 import os
 
 import torch
+import numpy as np
 
 from torchvision import transforms
+from PIL import Image
 
 
 def save_image(image, filename, path='.'):
@@ -80,3 +82,23 @@ def grayscale_tensor(images, device):
         return scale(image)
 
     return torch.stack(list(map(grayscale_tensor_, images))).to(device)
+
+
+def black2white(image, threshold=30):
+    """
+    Given PIL image, find black-padded lines and convert it into white padding
+    (For easy training)
+    """
+    image = np.array(image)
+    width, height, _ = image.shape
+    for w in range(width):
+        channel = np.multiply.reduce((image[w] <= threshold).reshape(-1))
+        is_black = (channel == 1)
+        if is_black:
+            image[w] = 255.
+    for h in range(height):
+        channel = np.multiply.reduce((image[:, h] <= threshold).reshape(-1))
+        is_black = (channel == 1)
+        if is_black:
+            image[:, h] = 255.
+    return Image.fromarray(image)
