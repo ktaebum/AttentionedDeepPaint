@@ -24,6 +24,15 @@
 \usehangulfontspec{default}
 \usepackage[hangul]{dhucs-setspace}
 \usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{xcolor,colortbl}
+\usepackage[hidelinks]{hyperref}
+
+%\definecolor{gray}{rgb}{166,166,166}
+\newcommand{\cellfill}[0]{\cellcolor{gray}}
+\newcommand{\pixpix}[0]{Pix2Pix}
+\newcommand{\stylepaint}[0]{Style2Paint}
+\newcommand{\autopaint}[0]{AutoPainter}
 
 \setmarginsrb{3 cm}{2.5 cm}{3 cm}{2.5 cm}{1 cm}{1.5 cm}{1 cm}{1.5 cm}
 
@@ -43,7 +52,7 @@
 \newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
 
 
-\usepackage[breaklinks=true,bookmarks=false]{hyperref}
+%\usepackage[breaklinks=true,bookmarks=false]{hyperref}
 
 \renewcommand\thesection{\Alph{section}}
 \renewcommand\thesubsection{\thesection.\arabic{subsection}}
@@ -135,6 +144,7 @@
 \bibliographystyle{ieee}
 \bibliography{egbib}
 }
+\input{appendix}
 %\end{multicols}
 \end{document}
 

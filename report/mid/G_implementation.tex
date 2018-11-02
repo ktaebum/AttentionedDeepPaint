@@ -1,6 +1,6 @@
 \section{Implementation/Training Spec}
 
-이 장에선, 이전 장(\ref{sec:archi})에서 구현한 모델들이 어떠한 스펙 상에서 구현되었는지와, 어떻게 학습이 되었는지를 서술한다. 기본적으로 모든 언어는 Python 3.6.6 상에서 작성되었다. 사용한 모든 외부 라이브러리에 대한 정보는, 표 \ref{tab:library_spec}에서 확인할 수 있다.
+이 장에선, 이전 장(\ref{sec:archi})에서 구현한 모델들이 어떠한 환경에서 구현되었는지와, 어떻게 학습이 되었는지를 서술한다. 기본적으로 모든 언어는 Python 3.6.6 상에서 작성되었다. 사용한 모든 외부 라이브러리에 대한 정보는, 표 \ref{tab:library_spec}에서 확인할 수 있고 더 구체적인 구현 정보는 Appendix에 서술하였다.
 \begin{table}[t]
 	\caption{라이브러리 스펙}
 	\centering
@@ -17,7 +17,7 @@
 \end{table}
 
 학습을 진행한 기계의 하드웨어 스펙은, Intel Xeon(R) E5-2630 CPU, NVIDIA GTX 1080ti GPU를 이용하여 학습하였다.
-학습에서 사용한 loss 함수는 style2paint에서 제시하는 loss 함수를 그대로 사용하였다.
+학습에서 사용한 loss 함수는 \stylepaint 에서 제시하는 loss 함수를 그대로 사용하였다.
 Generator를 $G$, Discriminator를 $D$, Guide Decoder 1을 $G_{1}$, Guide Decoder 2를 $G_{2}$, Style Extractor를 $E$ 라고 하자. 데이터셋이 스케치 이미지 $\mathcal{X}$, 채색 이미지 $\mathcal{Y}$의 쌍으로 구성되어 있다고 가정 했을 때, 최종적인 loss 함수는
 \begin{equation}
 	\mathcal{L}(G, G_{1}, G_{2}, D, E) = \mathcal{L}_{GAN} (G, D, E)  + \lambda \mathcal{L}_{l1} (G, G_{1}, G_{2}, E)

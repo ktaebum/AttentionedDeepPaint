@@ -1,13 +1,13 @@
 \section{Future Work}
 
 이 섹션에서는 중간발표 이후의 계획에 대하여 서술한다.
-교수님의 의견인 '확실한 스펙의 부재'의 문제를 해결해야할 필요성을 느꼈고, 이에 대해서 다음과 같이 앞으로 진행할 방향을 수정하기로 하였다.
+교수님의 의견인 확실한 목표의 부재의 문제를 해결해야할 필요성을 느꼈고, 이에 대해서 다음과 같이 앞으로 진행할 방향을 수정하기로 하였다.
 
 \subsection{Colorize Part by Part}
 
-style2paint를 reproduce하면서 이 논문에서 제안하는 방법을 우리의 문제 상황에 그대로 적용하기에는 다음과 같은 차이점 및 문제가 있다고 판단을 하였다.
+\stylepaint 를 reproduce하면서 이 논문에서 제안하는 방법을 우리의 문제 상황에 그대로 적용하기에는 다음과 같은 차이점 및 문제가 있다고 판단을 하였다.
 
-첫 번째로는 이미지 해상도에 의한 차이이다. style2paint 논문은 학습시 이미지의 크기를 256 x 256 pixel 이미지로 제한을 하였다.
+첫 번째로는 이미지 해상도에 의한 차이이다. \stylepaint~논문은 학습시 이미지의 크기를 256 x 256 pixel 이미지로 제한을 하였다.
 하지만 우리는 더 좋은 해상도인 512 x 512 pixel 이미지를 목표로 잡았기 때문에, 이에 따른 문제들이 발생한다. 결정적인 문제는, style extraction을 할 때 VGGNet \cite{Simonyan2014}에 들어가는 이미지의 해상도는 224 x 224이다.
 현재로써는 주어진 style 이미지에 대해, 이미지의 가운데로부터 224 x 224 크기만큼 잘라서 Style Extractor에 input으로 넣었기 때문에, Style Extractor는 전체적인 이미지 스타일을 보지 못 하고, 일부분만 보게된다. 그렇기 때문에, 채색을 할 때, style 이미지의 얼굴 부분은 얼굴 부분대로, 몸 부분은 몸 부분대로 들어가지 못 하고 부자연스러운 결과를 나타낸다.
 
@@ -15,8 +15,8 @@ style2paint를 reproduce하면서 이 논문에서 제안하는 방법을 우리
 
 \subsection{Model Improvement}
 
-현재까지 실험에서는 discriminator를 pix2pix에서 제시한, PatchGAN을 사용하였다 \cite{phillip2017}.
-하지만, style2paint 논문에서는 PatchGAN은 성능이 좋지 않고 Auxiliary Classifier GAN (ACGAN) \cite{Odena2017}이나, Deep Convolutional GAN (DCGAN) \cite{Radford2015}를 사용했다고 언급이 되어있다.
+현재까지 실험에서는 discriminator를 \pixpix 에서 제시한, PatchGAN을 사용하였다 \cite{phillip2017}.
+하지만, \stylepaint~논문에서는 PatchGAN은 성능이 좋지 않고 Auxiliary Classifier GAN (ACGAN) \cite{Odena2017}이나, Deep Convolutional GAN (DCGAN) \cite{Radford2015}를 사용했다고 언급이 되어있다.
 그렇기 때문에, 이와 같은 discriminator 모델을 사용하여 실험을 진행하는 것이 가치가 있을 것이라 판단된다.
 
 또한 Generator에서도 현재 512 x 512 해상도의 이미지에 대해 적용을 하므로, 기존의 모델보다는 조금 더 깊은 모델에 대해 실험을 해보는 것이 가치가 있을 것으로 판단된다. 따라서 더 깊은 모델을 구현할 때 높은 성능을 보장한다고 알려진 Residual Network \cite{He2016ResNet}와 Dense Network \cite{Huang2017DenseNet}의 기술을 적용했을 때의 결과를 확인할 것이다.
