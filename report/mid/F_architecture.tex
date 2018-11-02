@@ -1,5 +1,13 @@
 \section{Model Architecture}
 \label{sec:archi}
+이 장에서는 현재까지 구현된 전체적인 모델 구조를 설명한다 (그림 \ref{fig:archi}).
+
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=0.9\textwidth]{archi}
+	\caption{현재 모델의 학습 구조. 스케치 이미지는 Generator에, 채색된 이미지는 각각 Style Extractor와 Discriminator에 input으로 들어간다. 이후 Generator를 통과한 스케치 이미지 (채색 이미지)와 기존 채색된 이미지를 이용하여 loss를 계산하고 학습한다}
+	\label{fig:archi}
+\end{figure}
 
 \subsection{Style Extractor}
 

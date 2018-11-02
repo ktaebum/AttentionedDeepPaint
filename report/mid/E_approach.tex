@@ -41,7 +41,7 @@
 Sketch Simplification은 전체적으로 스케치 이미지를 불분명하게 만드는 효과가 있었고, smoothing 필터를 적용한 이미지는, 초기의 거친 느낌을 잡아주었기 때문에, 최종적으로는 PIL edge detection - PIL Smoothing Filter를 순차적으로 적용하여 sketch 이미지를 만드는 것으로 사용하기로 결정했다.
 \begin{figure}[t]
 	\centering
-	\includegraphics[width=\textwidth]{smooth}
+	\includegraphics[width=0.8\textwidth]{smooth}
 	\caption{PIL edge detection을 통해 얻은 스케치 이미지에 적용한 추가적인 효과. 가장 왼쪽이 edge detection을 통해 뽑아낸 직후이고 (그림 \ref{fig:edge_detection}의 왼쪽에서 두 번째 그림과 동일), 가운데 그림이 smoothing filter를 적용한 그림, 가장 오른쪽이 Sketch을 적용한 그림이다. 그림에서 확인할 수 있듯이 Sketch Simplification을 적용하면 머리카락 같이 세세하고 많은 스케치를 제대로 잡아내지 못한다.}
 	\label{fig:edge_smooth}
 \end{figure}
