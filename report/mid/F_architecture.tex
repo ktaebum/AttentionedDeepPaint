@@ -13,7 +13,7 @@ skip-connection이란, encoder - decoder network에서, encoder의 정보가 손
 이 16 x 16 x 1024 feature를 한 번은 Guide Decoder 1의 input으로 줘서 흑백 이미지를 하나 만들고, 다른 한 번은 다시 한 번 convolutional layer를 사용하여 크기를 8 x 8 x 4096으로 만들어 준다.
 이제 만들어진 8 x 8 x 4096 feature에, Style Extractor에서 뽑아낸 크기가 4096인 벡터를 더해주었다.
 이후, decoder 부분을 통해 원래 이미지 크기인 512 x 512 x 3으로 복원하였고, encoder에서 뽑아낸 skip-connection을 같이 concat하여 사용하였다.
-이 때 첫 번째 decoder layer에서 계산된 결과는 Guide Decoder 2에 input으로 들어간다. Guide Decoder에 대해 조금 첨언하면, \stylepaint~논문에서 decoder를 하나만 쓰지 말고, 중간 layer에서 추가적인 decoder를 사용하면 더 채색 효과가 좋다고 주장을 하기 때문에 사용하였다.
+이 때 첫 번째 decoder layer에서 계산된 결과는 Guide Decoder 2에 input으로 들어간다. Guide Decoder에 대해 조금 첨언하면, \stylepaint~논문에서 decoder를 하나만 쓰면 U-Net이 \textit{lazy}한 문제가 있고, 중간 layer에서 추가적인 decoder를 사용하면 더 채색 효과가 좋다고 주장을 하기 때문에 사용하였다.
 단, Guide Decoder에서는 skip-connection이 적용되지 않는다.
 
 \begin{figure}[t]

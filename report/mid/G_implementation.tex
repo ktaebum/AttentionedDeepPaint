@@ -33,7 +33,7 @@ Generator를 $G$, Discriminator를 $D$, Guide Decoder 1을 $G_{1}$, Guide Decode
 	& \alpha ||\bar{y} - G_{1} (x)||_{1} + \beta ||y - G_{2} (x, E(x))||_{1}]
 \end{align}
 로 나타난다.
-이 때, $|| \cdot ||_{1}$은, L1 loss로, 주어진 텐서 $\mathcal{Z}$에 대하여
+이 때, $|| \cdot ||_{1}$은, L1 loss로, 주어진 텐서 데이터 $\mathcal{Z}$에 대하여
 \begin{equation}
 || \mathcal{Z} ||_{1} = \sum_{i=1}^{N} |\mathcal{Z}_{i}|
 \end{equation}
