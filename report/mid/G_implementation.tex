@@ -1,0 +1,69 @@
+\section{Implementation/Training Spec}
+
+이 장에선, 이전 장(\ref{sec:archi})에서 구현한 모델들이 어떠한 환경에서 구현되었는지와, 어떻게 학습이 되었는지를 서술한다. 기본적으로 모든 언어는 Python 3.6.6 상에서 작성되었다. 사용한 모든 외부 라이브러리에 대한 정보는, 표 \ref{tab:library_spec}에서 확인할 수 있고 더 구체적인 구현 정보는 Appendix에 서술하였다.
+\begin{table}[t]
+	\caption{라이브러리 스펙}
+	\centering
+	\begin{tabular}{|C{2.0cm}|C{2.0cm}|L{9cm}|}
+		\toprule
+		\textbf{라이브러리} & \textbf{버전} & \textbf{URL} \\
+		\toprule
+		Pytorch & 0.4.1 & \url{https://pytorch.org/} \\
+		PIL & 5.1.0 & \url{https://pillow.readthedocs.io/en/5.1.x/}\\
+		Numpy & 1.14.5 &  \url{https://docs.scipy.org/doc/numpy-1.14.5/}\\
+		\bottomrule	
+\end{tabular}
+\label{tab:library_spec}
+\end{table}
+
+학습을 진행한 기계의 하드웨어 스펙은, Intel Xeon(R) E5-2630 CPU, NVIDIA GTX 1080ti GPU를 이용하여 학습하였다.
+학습에서 사용한 loss 함수는 \stylepaint 에서 제시하는 loss 함수를 그대로 사용하였다.
+Generator를 $G$, Discriminator를 $D$, Guide Decoder 1을 $G_{1}$, Guide Decoder 2를 $G_{2}$, Style Extractor를 $E$ 라고 하자. 데이터셋이 스케치 이미지 $\mathcal{X}$, 채색 이미지 $\mathcal{Y}$의 쌍으로 구성되어 있다고 가정 했을 때, 최종적인 loss 함수는
+\begin{equation}
+	\mathcal{L}(G, G_{1}, G_{2}, D, E) = \mathcal{L}_{GAN} (G, D, E)  + \lambda \mathcal{L}_{l1} (G, G_{1}, G_{2}, E)
+\end{equation}
+가 된다. 이 때 $\lambda$는 $\mathcal{L}_{l1}$에 대한 가중치이다. $\mathcal{L}_{GAN}$과 $\mathcal{L}_{l1}$는 각각
+\begin{align}
+	\mathcal{L}_{GAN} (G, D, E) &= \mathbb{E}_{x \sim \mathcal{X}} [\log{(1 - D(G(x, E(x))))}] \nonumber \\
+	& + \mathbb{E}_{y \sim \mathcal{Y}} [\log{(D(y))}]
+\end{align}
+과
+\begin{align}
+	\mathcal{L}_{l1} &= \mathbb{E}_{(x, y) \sim (\mathcal{X}, \mathcal{Y})} [||y - G(x, E(x))||_{1} + \nonumber \\
+	& \alpha ||\bar{y} - G_{1} (x)||_{1} + \beta ||y - G_{2} (x, E(x))||_{1}]
+\end{align}
+로 나타난다.
+이 때, $|| \cdot ||_{1}$은, L1 loss로, 주어진 텐서 데이터 $\mathcal{Z}$에 대하여
+\begin{equation}
+|| \mathcal{Z} ||_{1} = \sum_{i=1}^{N} |\mathcal{Z}_{i}|
+\end{equation}
+를 계산한다. 
+추가적으로, $\bar{y}$는 채색 이미지의 흑백 이미지이다. Guide Decoder 1을 통과한 이미지는 아직 채색 정보가 들어가기 전이므로, 흑백 이미지에 대한 loss 값을 사용하였다.
+$\alpha$와 $\beta$는 각각 Guide Decoder 1, Guide Decoder 2에 대한 loss의 가중치이다.
+
+이러한 loss 함수를 기준으로, 우리의 최종 학습 목표는
+\begin{equation}
+	G^{*} = \arg \min_{G} \max_{D} \mathcal{L}_{GAN} (G, D, E)  + \lambda \mathcal{L}_{l1} (G, G_{1}, G_{2}, E)
+\end{equation}
+를 만족하는 $G^{*}$를 학습시키는 것이 된다.
+학습에 사용한 여러 파라미터 값들은, 표 \ref{tab:training_spec}에서 확인할 수 있다.
+
+
+\begin{table}[t]
+	\caption{학습 하이퍼파라미터}
+	\centering
+	\begin{tabular}{|C{3.0cm}|C{2.0cm}|L{8.5cm}|}
+		\toprule
+		\textbf{파라미터} & \textbf{값} & \textbf{설명} \\
+		\toprule
+		Learning Rate & 0.0002 & Decay는 사용되지 않음 (고정 learning rate) \\
+		$\alpha$ & 0.3 & Guide Decoder 1의 loss weight \\
+		$\beta$ & 0.9 & Guide Decoder 2의 loss weight \\
+		$\lambda$ & 50 & L1 loss 전체에 대한 weight \\
+		Epochs & 200 & 전체 학습 epoch 수\\
+		$\beta_{1}$ & 0.5 & Adam optimizer의 $\beta_{1}$ \\
+		Batch Size & 4 & - \\
+		\bottomrule
+	\end{tabular}
+\label{tab:training_spec}
+\end{table}

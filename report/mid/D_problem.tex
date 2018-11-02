@@ -1,0 +1,19 @@
+\section{Goal/Problem \& Requirements}
+
+본 프로젝트에서는 현재까지 알려진 채색 모델 중 가장 좋은 성능을 보이는 Style2Paint 모델을 기반으로 하여 AutoPainter 모델을 능가하는 것을 목표로 한다.
+Style2Paint 모델은 높은 정확도의 채색 성능을 보이고 있으나, 기본적인 아이디어만 제시되어 있을 뿐 세부적인 구현 내용은 공개되어 있지 않다.
+현실적으로 Sytle2Paint의 결과를 100\% 구현하기에는 어려움이 있으므로 다른 초기의 자동 채색 모델 중 비교적 좋은 성능을 보여주는 AutoPainter 모델을 비교 대상으로 설정하였다.
+
+Style2Paint 모델은 U-Net 구조의 generator, VGGNet 기반 Style Extractor, ACGAN의 auxiliary classification discriminator를 사용한다.
+이 때 학습과정에서는 스케치와 채색된 이미지의 데이터 쌍이 필요하다.
+학습에 필요한 데이터 셋을 바로 구하기는 어렵기 때문에 채색된 이미지로부터 스케치를 추출해내는 과정이 필요하다.
+또한 학습에 필요한 모델의 세부 구조와 하이퍼파라미터 값이 정확하게 알려져 있지 않다.
+이러한 부분들은 채색 결과에 큰 영향을 미치므로, 좋은 성능을 내도록 이를 최적화하는 과정이 필요하다.
+마지막으로 Style2Paint 모델은 style extraction 과정에서 classification 모델을 사용하기 때문에 원하는 스타일의 색 정보가 정확하게 반영되지 못하는 점이 한계로 지적된다.
+
+본 프로젝트에서는 이러한 문제들을 해결하기 위하여 다음과 같은 세부 목표들을 설정하였다.
+\begin{itemize}[topsep=0pt,itemsep=-1ex,partopsep=1ex,parsep=1ex]
+	\item 스케치 - 채색 학습 데이터셋의 생성
+	\item Style2Paint 모델의 구현 및 최적화
+	\item 효율적인 스타일 추출 모델 반영
+\end{itemize}
