@@ -5,11 +5,11 @@
 
 \subsection{Colorize Part by Part}
 
-style2paint를 reproduce하면서 이 논문에서 제안하 방법을 우리의 문제 상황에 그대로 적용하기에는 다음과 같은 차이점 및 문제가 있다고 판단을 하였다.
+style2paint를 reproduce하면서 이 논문에서 제안하는 방법을 우리의 문제 상황에 그대로 적용하기에는 다음과 같은 차이점 및 문제가 있다고 판단을 하였다.
 
 첫 번째로는 이미지 해상도에 의한 차이이다. style2paint 논문은 학습시 이미지의 크기를 256 x 256 pixel 이미지로 제한을 하였다.
 하지만 우리는 더 좋은 해상도인 512 x 512 pixel 이미지를 목표로 잡았기 때문에, 이에 따른 문제들이 발생한다. 결정적인 문제는, style extraction을 할 때 VGGNet \cite{Simonyan2014}에 들어가는 이미지의 해상도는 224 x 224이다.
-현재로써는 주어진 style 이미지에 대해, 이미지의 가운데로부터 224 x 224 크기만큼 잘라서 style extractor에 넣었기 때문에, style extractor는 전체적인 이미지 스타일을 보지 못 하고, 일부분만 보게된다. 그렇기 때문에, 채색을 할 때, style 이미지의 얼굴 부분은 얼굴 부분대로, 몸 부분은 몸 부분대로 들어가지 못 하고 부자연스러운 결과를 나타낸다.
+현재로써는 주어진 style 이미지에 대해, 이미지의 가운데로부터 224 x 224 크기만큼 잘라서 Style Extractor에 input으로 넣었기 때문에, Style Extractor는 전체적인 이미지 스타일을 보지 못 하고, 일부분만 보게된다. 그렇기 때문에, 채색을 할 때, style 이미지의 얼굴 부분은 얼굴 부분대로, 몸 부분은 몸 부분대로 들어가지 못 하고 부자연스러운 결과를 나타낸다.
 
 이에 대해, 우리는 현재 잘 알려진 Object Detection Network를 사용하여 \cite{Ross2015, Ross2014,Kaiming2017, Joseph2016}, 주어진 그림 속에서 얼굴과, 몸을 각각 2개의 224 x 224 크기의 bounding box로 detection 할 수 있는 추가적인 모델 구현을 할 것이다. 정확하게 얼굴과 몸을 detect 할 수 있게되면, 채색 모델을 학습할 때, 얼굴에 대한 style extract, 몸에 대한 style extract를 각각 적용할 것이고, 이를 통해서 조금 더 현실적인 채색이 가능할 것이라고 생각된다.
 
@@ -19,4 +19,8 @@ style2paint를 reproduce하면서 이 논문에서 제안하 방법을 우리의
 하지만, style2paint 논문에서는 PatchGAN은 성능이 좋지 않고 Auxiliary Classifier GAN (ACGAN) \cite{Odena2017}이나, Deep Convolutional GAN (DCGAN) \cite{Radford2015}를 사용했다고 언급이 되어있다.
 그렇기 때문에, 이와 같은 discriminator 모델을 사용하여 실험을 진행하는 것이 가치가 있을 것이라 판단된다.
 
-또한 Generator에서도 현재 512 x 512 해상도의 이미지에 대해 적용을 하므로, 기존의 모델보다는 더 깊은 모델이 요구된다. 따라서 더 깊은 모델을 구현할 때 높은 성능을 보장한다고 알려진 Residual Network \cite{He2016ResNet}와 Dense Network \cite{Huang2017DenseNet}을 적용했을 때의 결과를 확인할 것이다.
+또한 Generator에서도 현재 512 x 512 해상도의 이미지에 대해 적용을 하므로, 기존의 모델보다는 조금 더 깊은 모델에 대해 실험을 해보는 것이 가치가 있을 것으로 판단된다. 따라서 더 깊은 모델을 구현할 때 높은 성능을 보장한다고 알려진 Residual Network \cite{He2016ResNet}와 Dense Network \cite{Huang2017DenseNet}의 기술을 적용했을 때의 결과를 확인할 것이다.
+
+마지막으로, loss 함수 및 하이퍼파라미터 조정에 따른 실험 결과도 관찰할 것이다.
+현재는 GAN loss를 제외하면 L1 loss를 사용하고 있는데 style transfer에서 사용하는 Content Loss \cite{Gatys2015StyleTransfer}등을 이용하면, 채색 결과에 차이가 있을 것으로 예상된다.
+이 과정들을 통해 어느정도 채색의 정확도가 높아진다면, 지속적인 하이퍼파라미터 조정을 통해, 실제 사용할 수 있는 모델을 만들 계획이다.
