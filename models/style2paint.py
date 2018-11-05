@@ -9,39 +9,42 @@ import torch.nn as nn
 class StylePaintDiscriminator(nn.Module):
     def __init__(self, sigmoid=True):
         super(StylePaintDiscriminator, self).__init__()
-        self.dim = 32
+        self.dim = 64
         self.sigmoid = sigmoid
 
         layers = []
-        # self.dim x 256 x 256
+        # 256 x 256
         layers.append(self._single_conv_block(6, self.dim, False))
 
-        # self.dim * 2 x 128 x 128
+        # 128 x 128
         layers.append(self._single_conv_block(self.dim, self.dim * 2))
 
-        # self.dim * 4 x 64 x 64
+        # 64 x 64
         layers.append(self._single_conv_block(self.dim * 2, self.dim * 4))
 
-        # self.dim * 8 x 32 x 32
+        # 32 x 32
         layers.append(self._single_conv_block(self.dim * 4, self.dim * 4))
 
-        # self.dim * 8 x 16 x16
+        # 16 x16
         layers.append(self._single_conv_block(self.dim * 4, self.dim * 4))
 
-        # self.dim * 16 x 8 x 8
+        # 8 x 8
         layers.append(self._single_conv_block(self.dim * 4, self.dim * 4))
 
-        # self.dim * 16 x 4 x 4
+        # 4 x 4
         layers.append(self._single_conv_block(self.dim * 4, self.dim * 8))
 
-        # self.dim * 16 x 1 x 1
+        # 2 x 2
+        layers.append(self._single_conv_block(self.dim * 8, self.dim * 8))
+
+        # 1 x 1
         layers.append(
             nn.Conv2d(
                 self.dim * 8,
                 1,
                 kernel_size=4,
                 stride=1,
-                padding=0,
+                padding=1,
                 bias=False))
 
         self.convs = nn.Sequential(*layers)
@@ -111,7 +114,10 @@ class StylePaintGenerator(nn.Module):
             self.norm(self.bottleneck_channel)
             if self.norm is not None else nn.Sequential(),
         )
-        self.embedding = nn.Linear(4096, self.bottleneck_channel)
+        if self.bottleneck_channel < 4096:
+            self.embedding = nn.Linear(4096, self.bottleneck_channel)
+        else:
+            self.embedding = None
 
         self.up_sampler = self._build_upsampler()
 
@@ -131,7 +137,8 @@ class StylePaintGenerator(nn.Module):
 
     def forward(self, image, style):
         # make dimension (1, 4096, 1, 1)
-        style = self.embedding(style)
+        if self.embedding is not None:
+            style = self.embedding(style)
         style = style.unsqueeze(-1).unsqueeze(-1)
 
         skip_connections = []

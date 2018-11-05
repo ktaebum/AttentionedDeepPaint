@@ -30,13 +30,14 @@ class Style2PaintTrainer(ModelTrainer):
 
         # build model
         self.resolution = self.args.resolution
-        self.generator = StylePaintGenerator(norm=self.args.norm).to(
-            self.device)
+        self.generator = ResidualUnet().to(self.device)
+        #  self.generator = StylePaintGenerator().to(self.device)
         #  self.generator = VggUnet(512, norm='instance').to(self.device)
         #  self.generator = ResidualUnet(norm=self.args.norm).to(self.device)
-        self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
-            self.device)
-        #  self.discriminator = PatchGAN(sigmoid=self.args.no_mse).to(self.device)
+        #  self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
+        #      self.device)
+        self.discriminator = PatchGAN(
+            dim=64, sigmoid=self.args.no_mse).to(self.device)
 
         # set optimizers
         self.optimizers = self._set_optimizers()
@@ -137,8 +138,8 @@ class Style2PaintTrainer(ModelTrainer):
         return i
 
     def validate(self, dataset, epoch, samples=3):
-        self.generator.eval()
-        self.discriminator.eval()
+        #  self.generator.eval()
+        #  self.discriminator.eval()
         length = len(dataset)
 
         # sample images
@@ -151,6 +152,12 @@ class Style2PaintTrainer(ModelTrainer):
 
         toPIL = transforms.ToPILImage()
 
+        G_loss_gan = []
+        G_loss_l1 = []
+        D_loss_real = []
+        D_loss_fake = []
+        l1_loss = self.losses['L1']
+        gan_loss = self.losses['GAN']
         for i, (target, style) in enumerate(zip(targets, styles)):
             sub_result = Image.new('RGB',
                                    (6 * self.resolution, self.resolution))
@@ -162,13 +169,27 @@ class Style2PaintTrainer(ModelTrainer):
                 styleA, styleB = styleB, styleA
 
             imageA = imageA.unsqueeze(0).to(self.device)
+            imageB = imageB.unsqueeze(0).to(self.device)
             styleB = styleB.unsqueeze(0).to(self.device)
-            fakeB, guide1, guide2 = self.generator(
-                imageA, self.extract_vgg_features(styleB))
+            with torch.no_grad():
+                fakeB, guide1, guide2 = self.generator(
+                    imageA, self.extract_vgg_features(styleB))
+                fakeAB = torch.cat([imageA, fakeB], 1)
+                realAB = torch.cat([imageA, imageB], 1)
+
+                G_loss_l1.append(l1_loss(fakeB, imageB).item())
+                G_loss_gan.append(
+                    gan_loss(self.discriminator(fakeAB), True).item())
+
+                D_loss_real.append(
+                    gan_loss(self.discriminator(realAB), True).item())
+                D_loss_fake.append(
+                    gan_loss(self.discriminator(fakeAB), False).item())
 
             styleB = styleB.squeeze()
             fakeB = fakeB.squeeze()
             imageA = imageA.squeeze()
+            imageB = imageB.squeeze()
             guide1 = guide1.squeeze()
             guide2 = guide2.squeeze()
 
@@ -188,6 +209,14 @@ class Style2PaintTrainer(ModelTrainer):
 
             result.paste(sub_result, (0, 0 + self.resolution * i))
 
+        print(
+            'Validate D_loss_real = %f, D_loss_fake = %f, G_loss_l1 = %f, G_loss_gan = %f'
+            % (
+                sum(D_loss_real) / samples,
+                sum(D_loss_fake) / samples,
+                sum(G_loss_l1) / samples,
+                sum(G_loss_gan) / samples,
+            ))
         save_image(result, 'style2paint_val_%03d' % epoch,
                    './data/pair_niko/result')
 
