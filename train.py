@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 
 from trainer import VggUnetTrainer, ResGenTrainer, ResUnetTrainer
 from trainer import Style2PaintTrainer, ResidualTrainer
+from trainer import DeepPaintTrainer
 
 from utils import get_default_argparser
 
@@ -20,7 +21,8 @@ TRIANER_MAP = {
     'resgen': ResGenTrainer,
     'resunet': ResUnetTrainer,
     'style2paint': Style2PaintTrainer,
-    'residual': ResidualTrainer
+    'residual': ResidualTrainer,
+    'deeppaint': DeepPaintTrainer,
 }
 
 

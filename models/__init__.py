@@ -5,6 +5,7 @@ from models.resblock import ResBlock, HalfResBlock
 from models.resgen import ResidualGenerator
 from models.resunet import ResUnet, ResidualUnet
 from models.style2paint import StylePaintGenerator, StylePaintDiscriminator
+from models.deeppaint import DeepPaintGenerator
 
 __all__ = [
     'Pix2PixGenerator',
@@ -17,4 +18,5 @@ __all__ = [
     'StylePaintGenerator',
     'StylePaintDiscriminator',
     'ResidualUnet',
+    'DeepPaintGenerator',
 ]
