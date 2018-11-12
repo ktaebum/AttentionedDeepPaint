@@ -20,7 +20,7 @@ from utils import GANLoss
 from utils import load_checkpoints, save_checkpoints
 from utils import AverageTracker, ImagePooling
 
-from preprocess import centor_crop_tensor, re_scale
+from preprocess import centor_crop_tensor, re_scale, scale
 from preprocess import save_image, grayscale_tensor
 
 
@@ -30,14 +30,14 @@ class Style2PaintTrainer(ModelTrainer):
 
         # build model
         self.resolution = self.args.resolution
-        #  self.generator = ResidualUnet().to(self.device)
-        self.generator = StylePaintGenerator().to(self.device)
+        self.generator = ResidualUnet().to(self.device)
+        #  self.generator = StylePaintGenerator().to(self.device)
         #  self.generator = VggUnet(512, norm='instance').to(self.device)
         #  self.generator = ResidualUnet(norm=self.args.norm).to(self.device)
-        self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
-            self.device)
-        #  self.discriminator = PatchGAN(
-        #      dim=64, sigmoid=self.args.no_mse).to(self.device)
+        #  self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
+        #      self.device)
+        self.discriminator = PatchGAN(
+            dim=64, sigmoid=self.args.no_mse).to(self.device)
 
         # set optimizers
         self.optimizers = self._set_optimizers()
@@ -237,7 +237,15 @@ class Style2PaintTrainer(ModelTrainer):
             optimizer=self.optimizers['D'])
 
     def extract_vgg_features(self, image):
-        image = centor_crop_tensor(image)
+        def resize(image):
+            image = transforms.ToPILImage()(re_scale(image.detach().cpu()))
+            image = transforms.Resize(224)(image)
+            image = transforms.ToTensor()(image)
+            image = scale(image)
+            return image
+
+        image = list(map(resize, image))
+        image = torch.stack(image, 0).to(self.device)
         with torch.no_grad():
             image = self.vgg_features(image)
             image = image.reshape(image.shape[0], -1)
