@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 
 Norm = nn.InstanceNorm2d
+Norm = nn.BatchNorm2d
 
 
 class DeepPaintDownSample(nn.Module):
@@ -91,8 +92,9 @@ class DeepPaintGenerator(nn.Module):
             if isinstance(module, nn.Conv2d):
                 nn.init.normal_(module.weight, 0, 0.02)
 
-    def forward(self, image, style):
+    def forward(self, image, colors, style):
         cache = []
+        image = torch.cat([image, colors], 1)
 
         for i, layer in enumerate(self.down_sampler):
             if i == len(self.down_sampler) - 1:
@@ -101,9 +103,8 @@ class DeepPaintGenerator(nn.Module):
             image, connection, idx = layer(image)
             cache.append((connection, idx))
 
-        image = image + style
-
         cache = list(reversed(cache))
+        image = image + style
 
         for i, (layer, (connection, idx)) in enumerate(
                 zip(self.up_sampler, cache)):
@@ -141,7 +142,7 @@ class DeepPaintGenerator(nn.Module):
         layers = nn.ModuleList()
 
         # 256
-        layers.append(DeepPaintDownSample(3, self.dim, self.bias))
+        layers.append(DeepPaintDownSample(15, self.dim, self.bias))
 
         # 128
         layers.append(DeepPaintDownSample(self.dim, self.dim * 2, self.bias))
