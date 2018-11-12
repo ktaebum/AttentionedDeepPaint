@@ -11,33 +11,28 @@ from PIL import Image
 
 from trainer.trainer import ModelTrainer
 
-from models import StylePaintGenerator, StylePaintDiscriminator
-from models import VggUnet
-from models import ResidualUnet
 from models import PatchGAN
+from models import DeepPaintGenerator, StylePaintDiscriminator
 
 from utils import GANLoss
 from utils import load_checkpoints, save_checkpoints
 from utils import AverageTracker, ImagePooling
 
-from preprocess import centor_crop_tensor, re_scale, scale
-from preprocess import save_image, grayscale_tensor
+from preprocess import grayscale_tensor, re_scale
+from preprocess import save_image, extract_color_histogram
 
 
-class Style2PaintTrainer(ModelTrainer):
+class DeepPaintTrainer(ModelTrainer):
     def __init__(self, *args):
-        super(Style2PaintTrainer, self).__init__(*args)
+        super(DeepPaintTrainer, self).__init__(*args)
 
         # build model
         self.resolution = self.args.resolution
-        self.generator = ResidualUnet().to(self.device)
-        #  self.generator = StylePaintGenerator().to(self.device)
-        #  self.generator = VggUnet(512, norm='instance').to(self.device)
-        #  self.generator = ResidualUnet(norm=self.args.norm).to(self.device)
-        #  self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
-        #      self.device)
+        self.generator = DeepPaintGenerator().to(self.device)
         self.discriminator = PatchGAN(
             dim=64, sigmoid=self.args.no_mse).to(self.device)
+        #  self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
+        #      self.device)
 
         # set optimizers
         self.optimizers = self._set_optimizers()
@@ -48,15 +43,11 @@ class Style2PaintTrainer(ModelTrainer):
         # set vgg
         vgg = models.vgg19_bn(True).to(self.device)
         self.vgg_features = vgg.features
-        self.vgg_fc1 = vgg.classifier[0]
+        for param in self.vgg_features.parameters():
+            param.requires_grad = False
 
         # set image pooler
         self.image_pool = ImagePooling(50)
-
-        for param in self.vgg_features.parameters():
-            param.requires_grad = False
-        for param in self.vgg_fc1.parameters():
-            param.requires_grad = False
 
         # load pretrained model
         if self.args.pretrainedG != '':
@@ -110,10 +101,18 @@ class Style2PaintTrainer(ModelTrainer):
 
             self.imageA = imageA.to(self.device)
             self.imageB = imageB.to(self.device)
+            colors = []
+            for imageB in self.imageB:
+                imageB = imageB.detach().cpu()
+                colors.append(extract_color_histogram(imageB))
+            colors = torch.stack(colors, 0)
 
             # run forward propagation
             self.fakeB, self.guide1, self.guide2 = self.generator(
-                self.imageA, self.extract_vgg_features(self.imageB))
+                self.imageA,
+                colors,
+                self.extract_vgg_features(self.imageB),
+            )
 
             self._update_discriminator()
             self._update_generator()
@@ -148,7 +147,7 @@ class Style2PaintTrainer(ModelTrainer):
         targets = idxs[0:samples]
 
         result = Image.new('RGB',
-                           (6 * self.resolution, samples * self.resolution))
+                           (7 * self.resolution, samples * self.resolution))
 
         toPIL = transforms.ToPILImage()
 
@@ -160,7 +159,7 @@ class Style2PaintTrainer(ModelTrainer):
         gan_loss = self.losses['GAN']
         for i, (target, style) in enumerate(zip(targets, styles)):
             sub_result = Image.new('RGB',
-                                   (6 * self.resolution, self.resolution))
+                                   (7 * self.resolution, self.resolution))
             imageA, imageB = dataset[target]
             styleA, styleB = dataset[style]
 
@@ -170,10 +169,15 @@ class Style2PaintTrainer(ModelTrainer):
 
             imageA = imageA.unsqueeze(0).to(self.device)
             imageB = imageB.unsqueeze(0).to(self.device)
+            style_color = extract_color_histogram(styleB).unsqueeze(0).to(
+                self.device)
             styleB = styleB.unsqueeze(0).to(self.device)
             with torch.no_grad():
                 fakeB, guide1, guide2 = self.generator(
-                    imageA, self.extract_vgg_features(styleB))
+                    imageA,
+                    style_color,
+                    self.extract_vgg_features(styleB),
+                )
                 fakeAB = torch.cat([imageA, fakeB], 1)
                 realAB = torch.cat([imageA, imageB], 1)
 
@@ -192,6 +196,7 @@ class Style2PaintTrainer(ModelTrainer):
             imageB = imageB.squeeze()
             guide1 = guide1.squeeze()
             guide2 = guide2.squeeze()
+            style_color = style_color.squeeze()
 
             imageA = toPIL(re_scale(imageA).detach().cpu())
             imageB = toPIL(re_scale(imageB).detach().cpu())
@@ -200,12 +205,33 @@ class Style2PaintTrainer(ModelTrainer):
             guide1 = toPIL(re_scale(guide1).detach().cpu())
             guide2 = toPIL(re_scale(guide2).detach().cpu())
 
+            # synthesize top-4 colors
+            color1 = toPIL(re_scale(style_color[0:3].detach().cpu()))
+            color2 = toPIL(re_scale(style_color[3:6].detach().cpu()))
+            color3 = toPIL(re_scale(style_color[6:9].detach().cpu()))
+            color4 = toPIL(re_scale(style_color[9:12].detach().cpu()))
+            color1.save('test.png')
+            color_result = Image.new('RGB', (self.resolution, self.resolution))
+            color_result.paste(
+                color1.crop((0, 0, self.resolution, self.resolution // 4)),
+                (0, 0))
+            color_result.paste(
+                color2.crop((0, 0, self.resolution, self.resolution // 4)),
+                (0, 512 // 4))
+            color_result.paste(
+                color3.crop((0, 0, self.resolution, self.resolution // 4)),
+                (0, 512 // 4 * 2))
+            color_result.paste(
+                color4.crop((0, 0, self.resolution, self.resolution // 4)),
+                (0, 512 // 4 * 3))
+
             sub_result.paste(imageA, (0, 0))
             sub_result.paste(styleB, (512, 0))
             sub_result.paste(guide1, (2 * 512, 0))
             sub_result.paste(guide2, (3 * 512, 0))
             sub_result.paste(fakeB, (4 * 512, 0))
             sub_result.paste(imageB, (5 * 512, 0))
+            sub_result.paste(color_result, (6 * 512, 0))
 
             result.paste(sub_result, (0, 0 + self.resolution * i))
 
@@ -217,7 +243,8 @@ class Style2PaintTrainer(ModelTrainer):
                 sum(G_loss_l1) / samples,
                 sum(G_loss_gan) / samples,
             ))
-        save_image(result, 'style2paint_val_%03d' % epoch,
+
+        save_image(result, 'deeppaint_val_%03d' % epoch,
                    './data/pair_niko/result')
 
     def test(self):
@@ -237,19 +264,26 @@ class Style2PaintTrainer(ModelTrainer):
             optimizer=self.optimizers['D'])
 
     def extract_vgg_features(self, image):
-        def resize(image):
-            image = transforms.ToPILImage()(re_scale(image.detach().cpu()))
-            image = transforms.Resize(224)(image)
-            image = transforms.ToTensor()(image)
-            image = scale(image)
+        #  pooling_layer = nn.MaxPool2d(2, 2)
+        """
+        def pooling(image, times):
+            for t in range(times):
+                image = pooling_layer(image)
             return image
 
-        image = list(map(resize, image))
-        image = torch.stack(image, 0).to(self.device)
+        features = []
+        with torch.no_grad():
+            for layer in self.vgg_features:
+                image = layer(image)
+                if isinstance(layer, nn.MaxPool2d):
+                    features.append(image)
+        times = [4, 3, 2, 1]
+        for time, feature in zip(times, features[:-1]):
+            image = image + pooling(feature, time)
+
+        """
         with torch.no_grad():
             image = self.vgg_features(image)
-            image = image.reshape(image.shape[0], -1)
-            image = self.vgg_fc1(image)
         return image
 
     def _set_optimizers(self):
@@ -275,19 +309,16 @@ class Style2PaintTrainer(ModelTrainer):
         optimG = self.optimizers['G']
         gan_loss = self.losses['GAN']
         l1_loss = self.losses['L1']
-        content_loss = self.losses['Content']
         batch_size = self.imageA.shape[0]
 
         optimG.zero_grad()
         fake_AB = torch.cat([self.imageA, self.fakeB], 1)
         logit_fake = self.discriminator(fake_AB)
-        #  logit_fake = self.discriminator(self.fakeB)
         loss_G_gan = gan_loss(logit_fake, True)
 
-        grayscaled = grayscale_tensor(self.imageB, self.device)
-
-        loss_G_guide1 = l1_loss(self.guide1, grayscaled) * self.args.alpha
-        loss_G_guide2 = content_loss(self.guide2, self.imageB) * self.args.beta
+        #  grayscaled = grayscale_tensor(self.imageB, self.device)
+        loss_G_guide1 = l1_loss(self.guide1, self.imageB) * self.args.alpha
+        loss_G_guide2 = l1_loss(self.guide2, self.imageB) * self.args.beta
         loss_G_l1 = (l1_loss(self.fakeB, self.imageB) + loss_G_guide1 +
                      loss_G_guide2) * self.args.lambd
 

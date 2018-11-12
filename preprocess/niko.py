@@ -4,7 +4,7 @@ Preprocess niko dataset and generate pair image
 import os
 import glob
 
-from . import get_sketch, save_image, scale
+from . import scale, black2white
 
 from PIL import Image
 
@@ -73,7 +73,7 @@ class NikoPairedDataset(Dataset):
         # padding as black
         padding = transforms.Pad((width_pad // 2, height_pad // 2 + 1,
                                   width_pad // 2 + 1, height_pad // 2),
-                                 (0, 0, 0))
+                                 (255, 255, 255))
 
         # use center crop
         crop = transforms.CenterCrop(self.size)
@@ -84,6 +84,10 @@ class NikoPairedDataset(Dataset):
         imageB = padding(imageB)
         imageB = crop(imageB)
 
+        # convert black padding to white padding
+        imageA = black2white(imageA)
+        imageB = black2white(imageB)
+
         if self.transform is not None:
             imageA = self.transform(imageA)
             imageB = self.transform(imageB)
@@ -92,22 +96,3 @@ class NikoPairedDataset(Dataset):
         imageA = scale(imageA)
         imageB = scale(imageB)
         return imageA, imageB
-
-
-if __name__ == "__main__":
-    # here comes generating sketch images
-    img_files = glob.glob('./data/toprocess/*.jpg', recursive=True)
-    for file in img_files:
-        filename = file.split('/')[-1][:-4]
-        print('Processing %s' % file)
-        original = Image.open(file)
-        sketch = get_sketch(file, 'more')
-
-        width, height = sketch.size
-
-        concat = Image.new('RGB', (2 * width, height))
-
-        concat.paste(original, (0, 0))
-        concat.paste(sketch, (width, 0))
-
-        save_image(concat, filename, './data/pair_niko')

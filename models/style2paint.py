@@ -13,35 +13,38 @@ class StylePaintDiscriminator(nn.Module):
         self.sigmoid = sigmoid
 
         layers = []
-        # self.dim x 256 x 256
+        # 256 x 256
         layers.append(self._single_conv_block(6, self.dim, False))
 
-        # self.dim * 2 x 128 x 128
+        # 128 x 128
         layers.append(self._single_conv_block(self.dim, self.dim * 2))
 
-        # self.dim * 4 x 64 x 64
+        # 64 x 64
         layers.append(self._single_conv_block(self.dim * 2, self.dim * 4))
 
-        # self.dim * 8 x 32 x 32
+        # 32 x 32
         layers.append(self._single_conv_block(self.dim * 4, self.dim * 4))
 
-        # self.dim * 8 x 16 x16
+        # 16 x16
         layers.append(self._single_conv_block(self.dim * 4, self.dim * 4))
 
-        # self.dim * 16 x 8 x 8
+        # 8 x 8
         layers.append(self._single_conv_block(self.dim * 4, self.dim * 4))
 
-        # self.dim * 16 x 4 x 4
+        # 4 x 4
         layers.append(self._single_conv_block(self.dim * 4, self.dim * 8))
 
-        # self.dim * 16 x 1 x 1
+        # 2 x 2
+        layers.append(self._single_conv_block(self.dim * 8, self.dim * 16))
+
+        # 1 x 1
         layers.append(
             nn.Conv2d(
-                self.dim * 8,
+                self.dim * 16,
                 1,
                 kernel_size=4,
                 stride=1,
-                padding=0,
+                padding=1,
                 bias=False))
 
         self.convs = nn.Sequential(*layers)
@@ -80,7 +83,7 @@ class StylePaintGenerator(nn.Module):
 
         self.bias = bias
         self.dropout = dropout
-        self.dim = 16
+        self.dim = 32
         self.bottleneck_channel = 2048
 
         self.relu = nn.ReLU(True)
@@ -102,7 +105,7 @@ class StylePaintGenerator(nn.Module):
         # from down_sampler to mid_layer (bottleneck)
         self.to_bottleneck = nn.Sequential(
             nn.Conv2d(
-                self.dim * 16,
+                self.dim * 32,
                 self.bottleneck_channel,
                 4,
                 2,
@@ -111,17 +114,10 @@ class StylePaintGenerator(nn.Module):
             self.norm(self.bottleneck_channel)
             if self.norm is not None else nn.Sequential(),
         )
-        self.embedding = nn.Linear(4096, self.bottleneck_channel)
-        self.from_bottleneck = nn.Sequential(
-            nn.ConvTranspose2d(
-                self.bottleneck_channel,
-                self.dim * 16,
-                4,
-                2,
-                1,
-                bias=self.bias),
-            self.norm(self.dim * 16)
-            if self.norm is not None else nn.Sequential())
+        if self.bottleneck_channel < 4096:
+            self.embedding = nn.Linear(4096, self.bottleneck_channel)
+        else:
+            self.embedding = None
 
         self.up_sampler = self._build_upsampler()
 
@@ -141,7 +137,8 @@ class StylePaintGenerator(nn.Module):
 
     def forward(self, image, style):
         # make dimension (1, 4096, 1, 1)
-        style = self.embedding(style)
+        if self.embedding is not None:
+            style = self.embedding(style)
         style = style.unsqueeze(-1).unsqueeze(-1)
 
         skip_connections = []
@@ -162,7 +159,7 @@ class StylePaintGenerator(nn.Module):
         image = self.to_bottleneck(image)
         # add style
         image = image + style
-        image = self.lrelu(image)
+        image = self.relu(image)
 
         for i, (layer, connection) in enumerate(
                 zip(self.up_sampler, skip_connections)):
@@ -190,8 +187,9 @@ class StylePaintGenerator(nn.Module):
             return nn.Sequential(*layers)
 
         layers = []
-        first_in_channels = self.dim * 16 if is_first else self.dim * 32
-        layers.append(guide_block(first_in_channels, self.dim * 16))
+        first_in_channels = self.dim * 32 if is_first else self.dim * 64
+        layers.append(guide_block(first_in_channels, self.dim * 32))
+        layers.append(guide_block(self.dim * 32, self.dim * 16))
         layers.append(guide_block(self.dim * 16, self.dim * 8))
         layers.append(guide_block(self.dim * 8, self.dim * 4))
         layers.append(guide_block(self.dim * 4, self.dim * 2))
@@ -209,8 +207,11 @@ class StylePaintGenerator(nn.Module):
 
         layers = nn.ModuleList()
         layers.append(
-            SingleLayerUpSampleBlock(self.bottleneck_channel, self.dim * 16,
+            SingleLayerUpSampleBlock(self.bottleneck_channel, self.dim * 32,
                                      self.bias, True))
+        layers.append(
+            SingleLayerUpSampleBlock(self.dim * 32 + self.dim * 32,
+                                     self.dim * 16, self.bias, True))
         layers.append(
             SingleLayerUpSampleBlock(self.dim * 16 + self.dim * 16,
                                      self.dim * 8, self.bias, True))
@@ -238,6 +239,9 @@ class StylePaintGenerator(nn.Module):
             SingleLayerDownSampleBlock(self.dim * 4, self.dim * 8, self.bias))
         layers.append(
             SingleLayerDownSampleBlock(self.dim * 8, self.dim * 16, self.bias))
+        layers.append(
+            SingleLayerDownSampleBlock(self.dim * 16, self.dim * 32,
+                                       self.bias))
         return layers
 
 

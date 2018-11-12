@@ -7,7 +7,8 @@ Based reference on style2paints paper
 import torch
 import torch.nn as nn
 
-from torchvision import models
+from models.style2paint import SingleLayerDownSampleBlock
+from models.style2paint import SingleLayerUpSampleBlock
 
 
 class VggUnet(nn.Module):
