@@ -9,6 +9,26 @@ import numpy as np
 
 from torchvision import transforms
 from PIL import Image
+from colorgram import colorgram
+
+
+def extract_color_histogram(image, topk=4):
+    """
+    get image
+    extract top-k colors except background color
+    return (1, 3 * k, image.shape) tensor
+    """
+    colors = colorgram.extract(image, 6)
+    tensor = torch.ones([topk * 3, image.shape[1], image.shape[2]])
+    for i, color in enumerate(colors[(6 - topk):]):
+        red = i * 3
+        green = i * 3 + 1
+        blue = i * 3 + 2
+        tensor[red] *= color.rgb.r
+        tensor[green] *= color.rgb.g
+        tensor[blue] *= color.rgb.b
+
+    return scale(tensor / 255.)
 
 
 def save_image(image, filename, path='.'):
