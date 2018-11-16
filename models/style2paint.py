@@ -29,18 +29,18 @@ class StylePaintDiscriminator(nn.Module):
         layers.append(self._single_conv_block(self.dim * 4, self.dim * 4))
 
         # 8 x 8
-        layers.append(self._single_conv_block(self.dim * 4, self.dim * 4))
-
-        # 4 x 4
         layers.append(self._single_conv_block(self.dim * 4, self.dim * 8))
 
+        # 4 x 4
+        layers.append(self._single_conv_block(self.dim * 8, self.dim * 8))
+
         # 2 x 2
-        layers.append(self._single_conv_block(self.dim * 8, self.dim * 16))
+        layers.append(self._single_conv_block(self.dim * 8, self.dim * 8))
 
         # 1 x 1
         layers.append(
             nn.Conv2d(
-                self.dim * 16,
+                self.dim * 8,
                 1,
                 kernel_size=4,
                 stride=1,

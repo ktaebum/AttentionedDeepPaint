@@ -38,7 +38,10 @@ def main(args):
     ])
 
     # assign data loader
-    train_data = NikoPairedDataset(transform=train_transform)
+    train_data = NikoPairedDataset(
+        transform=train_transform,
+        color_histogram=(args.model == 'deeppaint'),
+    )
     train_loader = DataLoader(
         train_data,
         shuffle=True,
@@ -48,6 +51,7 @@ def main(args):
     val_data = NikoPairedDataset(
         transform=val_transform,
         mode='val',
+        color_histogram=(args.model == 'deeppaint'),
     )
 
     trainer = TRIANER_MAP.get(args.model, None)

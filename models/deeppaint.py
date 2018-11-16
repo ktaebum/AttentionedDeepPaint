@@ -92,7 +92,7 @@ class DeepPaintGenerator(nn.Module):
             if isinstance(module, nn.Conv2d):
                 nn.init.normal_(module.weight, 0, 0.02)
 
-    def forward(self, image, colors, style):
+    def forward(self, image, colors, styles):
         cache = []
         image = torch.cat([image, colors], 1)
 
@@ -104,14 +104,16 @@ class DeepPaintGenerator(nn.Module):
             cache.append((connection, idx))
 
         cache = list(reversed(cache))
-        image = image + style
 
         for i, (layer, (connection, idx)) in enumerate(
                 zip(self.up_sampler, cache)):
             image = layer(image, connection, idx)
             if i == 0:
+                image = image + styles[1]
                 guide2 = self.forward_guide2(image,
                                              list(map(lambda x: x[1], cache)))
+            elif i == 1:
+                image = image + styles[0]
 
         return image, guide1, guide2
 
@@ -129,6 +131,8 @@ class DeepPaintGenerator(nn.Module):
 
     def _guide_decoder(self):
         layers = nn.ModuleList()
+        layers.append(
+            DeepPaintGuideBlock(self.dim * 8, self.dim * 8, self.bias))
         layers.append(
             DeepPaintGuideBlock(self.dim * 8, self.dim * 4, self.bias))
         layers.append(
@@ -150,10 +154,16 @@ class DeepPaintGenerator(nn.Module):
         # 64
         layers.append(
             DeepPaintDownSample(self.dim * 2, self.dim * 4, self.bias))
+
         # 32
         layers.append(
             DeepPaintDownSample(self.dim * 4, self.dim * 8, self.bias))
+
         # 16
+        layers.append(
+            DeepPaintDownSample(self.dim * 8, self.dim * 8, self.bias))
+
+        # 8
         layers.append(
             DeepPaintDownSample(self.dim * 8, self.dim * 8, self.bias))
 
@@ -164,9 +174,11 @@ class DeepPaintGenerator(nn.Module):
         layers.append(
             DeepPaintUpSample(self.dim * 8 * 2, self.dim * 8, self.bias, True))
         layers.append(
+            DeepPaintUpSample(self.dim * 8 * 2, self.dim * 8, self.bias, True))
+        layers.append(
             DeepPaintUpSample(self.dim * 8 * 2, self.dim * 4, self.bias, True))
         layers.append(
-            DeepPaintUpSample(self.dim * 4 * 2, self.dim * 2, self.bias, True))
+            DeepPaintUpSample(self.dim * 4 * 2, self.dim * 2, self.bias))
         layers.append(
             DeepPaintUpSample(self.dim * 2 * 2, self.dim * 1, self.bias))
         layers.append(
