@@ -18,9 +18,9 @@ def extract_color_histogram(image, topk=4):
     extract top-k colors except background color
     return (1, 3 * k, image.shape) tensor
     """
-    colors = colorgram.extract(image, 6)
+    colors = colorgram.extract(image, topk + 1)
     tensor = torch.ones([topk * 3, image.shape[1], image.shape[2]])
-    for i, color in enumerate(colors[(6 - topk):]):
+    for i, color in enumerate(colors[1:]):
         red = i * 3
         green = i * 3 + 1
         blue = i * 3 + 2
@@ -109,6 +109,7 @@ def black2white(image, threshold=30):
     Given PIL image, find black-padded lines and convert it into white padding
     (For easy training)
     """
+    image = image.convert('RGB')
     image = np.array(image)
     width, height, _ = image.shape
     for w in range(width):
