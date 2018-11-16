@@ -3,13 +3,15 @@ Preprocess niko dataset and generate pair image
 """
 import os
 import glob
+import json
 
-from . import scale, black2white
+from . import scale, make_colorgram_tensor
 
 from PIL import Image
 
 from torchvision import transforms
 from torch.utils.data import Dataset
+from preprocess import extract_color_histogram
 
 
 class NikoPairedDataset(Dataset):
@@ -23,11 +25,13 @@ class NikoPairedDataset(Dataset):
                  root='./data/pair_niko',
                  mode='train',
                  transform=None,
+                 color_histogram=False,
                  size=512):
         """
         @param root: data root
         @param mode: set mode (train, test, val)
         @param transform: Image Processing
+        @param color_histogram: extract color_histogram
         @param size: image crop (or resize) size
         """
         if mode not in {'train', 'val', 'test'}:
@@ -38,6 +42,7 @@ class NikoPairedDataset(Dataset):
         self.is_train = (mode == 'train')
         self.transform = transform
         self.image_files = glob.glob(os.path.join(root, '*.png'))
+        self.color_histogram = color_histogram
         self.size = size
 
         if len(self.image_files) == 0:
@@ -52,10 +57,24 @@ class NikoPairedDataset(Dataset):
         Niko Dataset Get Item
         @param index: index
         Returns:
+            if self.color_histogram
+            tuple: (imageA == original, imageB == sketch, colors)
+            else:
             tuple: (imageA == original, imageB == sketch)
         """
+        filename = self.image_files[index]
+        file_id = filename.split('/')[-1][:-4]
 
-        image = Image.open(self.image_files[index])
+        if self.color_histogram:
+            # build colorgram tensor
+            with open(
+                    os.path.join('./data/pair_niko/colorgram',
+                                 '%s.json' % file_id), 'r') as json_file:
+                # load color info dictionary from json file
+                color_info = json.loads(json_file.read())
+                colors = make_colorgram_tensor(color_info)
+
+        image = Image.open(filename)
         image_width, image_height = image.size
         imageA = image.crop((0, 0, image_width // 2, image_height))
         imageB = image.crop((image_width // 2, 0, image_width, image_height))
@@ -70,7 +89,7 @@ class NikoPairedDataset(Dataset):
         if height_pad < 0:
             height_pad = 0
 
-        # padding as black
+        # padding as white
         padding = transforms.Pad((width_pad // 2, height_pad // 2 + 1,
                                   width_pad // 2 + 1, height_pad // 2),
                                  (255, 255, 255))
@@ -84,10 +103,6 @@ class NikoPairedDataset(Dataset):
         imageB = padding(imageB)
         imageB = crop(imageB)
 
-        # convert black padding to white padding
-        imageA = black2white(imageA)
-        imageB = black2white(imageB)
-
         if self.transform is not None:
             imageA = self.transform(imageA)
             imageB = self.transform(imageB)
@@ -95,4 +110,7 @@ class NikoPairedDataset(Dataset):
         # scale image into range [-1, 1]
         imageA = scale(imageA)
         imageB = scale(imageB)
-        return imageA, imageB
+        if not self.color_histogram:
+            return imageA, imageB
+        else:
+            return imageA, imageB, colors

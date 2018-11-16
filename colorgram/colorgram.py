@@ -43,6 +43,7 @@ def extract(f, number_of_colors):
         image = Image.open(f)
     elif isinstance(f, torch.Tensor):
         image = transforms.ToPILImage()(f)
+    image = f
     if image.mode not in ('RGB', 'RGBA', 'RGBa'):
         image = image.convert('RGB')
 
