@@ -44,6 +44,7 @@ def main(args):
     train_data = NikoPairedDataset(
         transform=train_transform,
         color_histogram=(args.model in COLORGRAM_ENABLE),
+        need_resize=(args.model == 'attention'),
     )
     train_loader = DataLoader(
         train_data,
@@ -55,6 +56,7 @@ def main(args):
         transform=val_transform,
         mode='val',
         color_histogram=(args.model in COLORGRAM_ENABLE),
+        need_resize=(args.model == 'attention'),
     )
 
     trainer = TRIANER_MAP.get(args.model, None)

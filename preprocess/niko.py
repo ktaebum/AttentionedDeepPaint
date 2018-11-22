@@ -25,11 +25,13 @@ class NikoPairedDataset(Dataset):
                  mode='train',
                  transform=None,
                  color_histogram=False,
+                 need_resize=False,
                  size=512):
         """
         @param root: data root
         @param mode: set mode (train, test, val)
         @param transform: Image Processing
+        @param need_resize: Return 224 resized version of style image
         @param color_histogram: extract color_histogram
         @param size: image crop (or resize) size
         """
@@ -41,6 +43,7 @@ class NikoPairedDataset(Dataset):
         self.is_train = (mode == 'train')
         self.transform = transform
         self.image_files = glob.glob(os.path.join(root, '*.png'))
+        self.resize = need_resize
         self.color_histogram = color_histogram
         self.size = size
         self.color_cache = {}
@@ -106,6 +109,11 @@ class NikoPairedDataset(Dataset):
         imageB = padding(imageB)
         imageB = crop(imageB)
 
+        if self.resize:
+            resizeA = transforms.Resize(224)(imageA)
+            resizeA = transforms.ToTensor()(resizeA)
+            resizeA = scale(resizeA)
+
         if self.transform is not None:
             imageA = self.transform(imageA)
             imageB = self.transform(imageB)
@@ -114,6 +122,12 @@ class NikoPairedDataset(Dataset):
         imageA = scale(imageA)
         imageB = scale(imageB)
         if not self.color_histogram:
-            return imageA, imageB
+            if self.resize:
+                return imageA, imageB, resizeA
+            else:
+                return imageA, imageB
         else:
-            return imageA, imageB, colors
+            if self.resize:
+                return imageA, imageB, colors, resizeA
+            else:
+                return imageA, imageB, colors
