@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 from trainer import VggUnetTrainer, ResGenTrainer, ResUnetTrainer
 from trainer import Style2PaintTrainer, ResidualTrainer
-from trainer import DeepPaintTrainer
+from trainer import DeepPaintTrainer, AttentionPaintTrainer
 
 from utils import get_default_argparser
 
@@ -23,7 +23,10 @@ TRIANER_MAP = {
     'style2paint': Style2PaintTrainer,
     'residual': ResidualTrainer,
     'deeppaint': DeepPaintTrainer,
+    'attention': AttentionPaintTrainer,
 }
+
+COLORGRAM_ENABLE = ('deeppaint', 'attention')
 
 
 def main(args):
@@ -40,7 +43,7 @@ def main(args):
     # assign data loader
     train_data = NikoPairedDataset(
         transform=train_transform,
-        color_histogram=(args.model == 'deeppaint'),
+        color_histogram=(args.model in COLORGRAM_ENABLE),
     )
     train_loader = DataLoader(
         train_data,
@@ -51,7 +54,7 @@ def main(args):
     val_data = NikoPairedDataset(
         transform=val_transform,
         mode='val',
-        color_histogram=(args.model == 'deeppaint'),
+        color_histogram=(args.model in COLORGRAM_ENABLE),
     )
 
     trainer = TRIANER_MAP.get(args.model, None)

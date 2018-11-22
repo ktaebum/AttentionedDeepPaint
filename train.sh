@@ -23,10 +23,10 @@
        # --batch-size 4 --save-every 300 --lambd 200 --train --model style2paint \
 #        --sample 3 --no-mse --norm batch --num-epochs 300 --print-every 50 \
 
-python train.py --learning-rate 0.0002 --beta1 0.5 --verbose \
-       --batch-size 4 --save-every 10 --lambd 150 --model deeppaint \
-       --sample 4 --no-mse --norm batch --num-epochs 50 --print-every 200 \
-       --train --alpha 0.6 --beta 0.8
+# python train.py --learning-rate 0.0002 --beta1 0.5 --verbose \
+       # --batch-size 4 --save-every 10 --lambd 150 --model deeppaint \
+       # --sample 4 --no-mse --norm batch --num-epochs 50 --print-every 200 \
+#        --train --alpha 0.6 --beta 0.8
 
 # python train.py --learning-rate 0.0002 --beta1 0.5 --verbose \
        # --batch-size 4 --save-every 10 --lambd 50 --model deeppaint \
@@ -36,3 +36,9 @@ python train.py --learning-rate 0.0002 --beta1 0.5 --verbose \
 # python train.py --learning-rate 0.0002 --beta1 0.5 --verbose --alpha 0.3 \
       # --batch-size 1 --save-every 10 --lambd 10 --train --model residual \
 #       --sample 3 --no-mse\
+
+
+python train.py --learning-rate 0.0002 --beta1 0.5 --verbose \
+       --batch-size 4 --save-every 10 --lambd 150 --model attention \
+       --sample 4 --no-mse --norm batch --num-epochs 50 --print-every 200 \
+       --train 
