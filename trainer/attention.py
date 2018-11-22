@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.optim as optim
 
 import random
+import time
+import os
 
 from torchvision import transforms
 from torchvision import models
@@ -18,13 +20,24 @@ from utils import GANLoss
 from utils import load_checkpoints, save_checkpoints
 from utils import AverageTracker, ImagePooling
 
-from preprocess import re_scale, scale
+from preprocess import re_scale
 from preprocess import save_image
 
 
 class AttentionPaintTrainer(ModelTrainer):
     def __init__(self, *args):
         super(AttentionPaintTrainer, self).__init__(*args)
+
+        # log file
+        ctime = time.ctime().split()
+        log_path = './log'
+        log_dir = os.path.join(
+            log_path,
+            '%s_%s_%s_%s' % (ctime[-1], ctime[1], ctime[2], ctime[3]))
+        os.mkdir(log_dir)
+        with open(os.path.join(log_dir, 'arg.txt'), 'w') as f:
+            f.write(str(args))
+        self.log_file = open(os.path.join(log_dir, 'loss.txt'), 'w')
 
         # build model
         self.resolution = self.args.resolution
@@ -41,10 +54,7 @@ class AttentionPaintTrainer(ModelTrainer):
         # set vgg
         vgg = models.vgg19_bn(True).to(self.device)
         self.vgg_features = vgg.features
-        self.vgg_fc1 = vgg.classifier[0]
         for param in self.vgg_features.parameters():
-            param.requires_grad = False
-        for param in self.vgg_fc1.parameters():
             param.requires_grad = False
 
         # set image pooler
@@ -90,7 +100,7 @@ class AttentionPaintTrainer(ModelTrainer):
         for tracker in average_trackers:
             tracker.initialize()
         for i, datas in enumerate(self.data_loader, last_iteration):
-            imageA, imageB, colors, resized = datas
+            imageA, imageB, colors = datas
             if self.args.mode == 'B2A':
                 # swap
                 imageA, imageB = imageB, imageA
@@ -98,13 +108,12 @@ class AttentionPaintTrainer(ModelTrainer):
             self.imageA = imageA.to(self.device)
             self.imageB = imageB.to(self.device)
             colors = colors.to(self.device)
-            resized = resized.to(self.device)
 
             # run forward propagation
             self.fakeB = self.generator(
                 self.imageA,
                 colors,
-                self.extract_vgg_features(resized),
+                self.extract_vgg_features(self.imageB),
             )
 
             self._update_discriminator()
@@ -122,6 +131,9 @@ class AttentionPaintTrainer(ModelTrainer):
                     self.loss_G_l1(),
                 ))
 
+        self.log_file.write(
+            '%f\t%f\t%f\t%f\n' % (self.loss_D_real(), self.loss_D_fake(),
+                                  self.loss_G_gan(), self.loss_G_l1()))
         return i
 
     def validate(self, dataset, epoch, samples=3):
@@ -148,8 +160,8 @@ class AttentionPaintTrainer(ModelTrainer):
         for i, (target, style) in enumerate(zip(targets, styles)):
             sub_result = Image.new('RGB',
                                    (5 * self.resolution, self.resolution))
-            imageA, imageB, _, _ = dataset[target]
-            styleA, styleB, colors, resized = dataset[style]
+            imageA, imageB, _ = dataset[target]
+            styleA, styleB, colors = dataset[style]
 
             if self.args.mode == 'B2A':
                 imageA, imageB = imageB, imageA
@@ -159,13 +171,12 @@ class AttentionPaintTrainer(ModelTrainer):
             imageB = imageB.unsqueeze(0).to(self.device)
             styleB = styleB.unsqueeze(0).to(self.device)
             colors = colors.unsqueeze(0).to(self.device)
-            resized = resized.unsqueeze(0).to(self.device)
 
             with torch.no_grad():
                 fakeB = self.generator(
                     imageA,
                     colors,
-                    self.extract_vgg_features(resized),
+                    self.extract_vgg_features(styleB),
                 )
                 fakeAB = torch.cat([imageA, fakeB], 1)
                 realAB = torch.cat([imageA, imageB], 1)
@@ -247,23 +258,9 @@ class AttentionPaintTrainer(ModelTrainer):
             optimizer=self.optimizers['D'])
 
     def extract_vgg_features(self, image):
-        """
-        def resize_in_pil(image):
-            image = re_scale(image)
-            image = transforms.ToPILImage()(image)
-            image = transforms.Resize(224)(image)
-            image = transforms.ToTensor()(image)
-            image = scale(image)
-            return image
-        image = image.detach().cpu()
-        image = list(map(lambda img: resize_in_pil(img), image))
-        image = torch.stack(image, 0).to(self.device)
-        """
 
         with torch.no_grad():
             image = self.vgg_features(image)
-            image = image.reshape(image.shape[0], -1)
-            image = self.vgg_fc1(image)
         return image
 
     def _set_optimizers(self):

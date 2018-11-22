@@ -27,6 +27,10 @@ class AttentionPaintGenerator(nn.Module):
         self.down_sampler = self._down_sample()
         self.up_sampler = self._up_sample()
 
+        self.bridge = nn.Sequential(
+            nn.Conv2d(self.dim * 8, self.dim * 8, 3, 1, 1, bias=bias),
+            Norm(self.dim * 8), nn.ReLU(True))
+
         for module in self.modules():
             if isinstance(module, nn.Conv2d):
                 nn.init.normal_(module.weight, 0, 0.02)
@@ -38,13 +42,6 @@ class AttentionPaintGenerator(nn.Module):
         print(self.forward(x, c, s).shape)
 
     def forward(self, image, colors, style):
-        """
-        style shoud be (batch_size x 4096)
-        """
-
-        # unsqueeze style
-        style = style.unsqueeze(-1).unsqueeze(-1)
-
         cache = []
         image = torch.cat([image, colors], 1)
 
@@ -54,6 +51,7 @@ class AttentionPaintGenerator(nn.Module):
 
         cache = list(reversed(cache))
         image = image + style
+        image = self.bridge(image)
 
         for i, (layer, (connection, idx)) in enumerate(
                 zip(self.up_sampler, cache)):
@@ -84,17 +82,17 @@ class AttentionPaintGenerator(nn.Module):
             AttentionPaintDownSample(self.dim * 8, self.dim * 8, self.bias))
 
         # 8
-        layers.append(
-            AttentionPaintDownSample(self.dim * 8, self.bridge_channel,
-                                     self.bias))
+        #  layers.append(
+        #  AttentionPaintDownSample(self.dim * 8, self.bridge_channel,
+        #                               self.bias))
 
         return layers
 
     def _up_sample(self):
         layers = nn.ModuleList()
-        layers.append(
-            AttentionPaintUpSample(self.bridge_channel * 2, self.dim * 8,
-                                   self.bias, True))
+        #  layers.append(
+        #  AttentionPaintUpSample(self.bridge_channel * 2, self.dim * 8,
+        #                             self.bias, True))
         layers.append(
             AttentionPaintUpSample(self.dim * 8 * 2, self.dim * 8, self.bias,
                                    True))
@@ -102,7 +100,8 @@ class AttentionPaintGenerator(nn.Module):
             AttentionPaintUpSample(self.dim * 8 * 2, self.dim * 4, self.bias,
                                    True))
         layers.append(
-            AttentionPaintUpSample(self.dim * 4 * 2, self.dim * 2, self.bias))
+            AttentionPaintUpSample(self.dim * 4 * 2, self.dim * 2, self.bias,
+                                   True))
         layers.append(
             AttentionPaintUpSample(self.dim * 2 * 2, self.dim * 1, self.bias))
         layers.append(

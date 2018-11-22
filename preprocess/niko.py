@@ -64,6 +64,9 @@ class NikoPairedDataset(Dataset):
             tuple: (imageA == original, imageB == sketch, colors)
             else:
             tuple: (imageA == original, imageB == sketch)
+
+            if self.resize
+            resized image will be appended end of the above tuple
         """
         filename = self.image_files[index]
         file_id = filename.split('/')[-1][:-4]
@@ -110,7 +113,8 @@ class NikoPairedDataset(Dataset):
         imageB = crop(imageB)
 
         if self.resize:
-            resizeA = transforms.Resize(224)(imageA)
+            resizeA = Image.open(
+                os.path.join('./data/pair_niko/resize', '%s.png' % file_id))
             resizeA = transforms.ToTensor()(resizeA)
             resizeA = scale(resizeA)
 
