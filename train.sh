@@ -24,10 +24,14 @@
 #        --sample 3 --no-mse --norm batch --num-epochs 300 --print-every 50 \
 
 python train.py --learning-rate 0.0002 --beta1 0.5 --verbose \
-       --batch-size 12 --save-every 10 --lambd 150 --model deeppaint \
-       --sample 4 --no-mse --norm batch --num-epochs 50 --print-every 50 \
-       --alpha 0.6 --beta 0.9 --train
+       --batch-size 4 --save-every 10 --lambd 150 --model deeppaint \
+       --sample 4 --no-mse --norm batch --num-epochs 50 --print-every 200 \
+       --train --alpha 0.6 --beta 0.8
 
+# python train.py --learning-rate 0.0002 --beta1 0.5 --verbose \
+       # --batch-size 4 --save-every 10 --lambd 50 --model deeppaint \
+       # --sample 4 --no-mse --norm batch --num-epochs 50 --print-every 200 \
+#        --train --alpha 0.8 --beta 0.6 --pretrainedG modelG.pth.tar --pretrainedD modelD.pth.tar
 # residual training
 # python train.py --learning-rate 0.0002 --beta1 0.5 --verbose --alpha 0.3 \
       # --batch-size 1 --save-every 10 --lambd 10 --train --model residual \

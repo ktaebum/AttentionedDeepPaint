@@ -11,7 +11,6 @@ from PIL import Image
 
 from torchvision import transforms
 from torch.utils.data import Dataset
-from preprocess import extract_color_histogram
 
 
 class NikoPairedDataset(Dataset):
@@ -44,6 +43,7 @@ class NikoPairedDataset(Dataset):
         self.image_files = glob.glob(os.path.join(root, '*.png'))
         self.color_histogram = color_histogram
         self.size = size
+        self.color_cache = {}
 
         if len(self.image_files) == 0:
             # no png file, use jpg
@@ -67,12 +67,15 @@ class NikoPairedDataset(Dataset):
 
         if self.color_histogram:
             # build colorgram tensor
-            with open(
-                    os.path.join('./data/pair_niko/colorgram',
-                                 '%s.json' % file_id), 'r') as json_file:
-                # load color info dictionary from json file
-                color_info = json.loads(json_file.read())
-                colors = make_colorgram_tensor(color_info)
+            color_info = self.color_cache.get(file_id, None)
+            if color_info is None:
+                with open(
+                        os.path.join('./data/pair_niko/colorgram',
+                                     '%s.json' % file_id), 'r') as json_file:
+                    # load color info dictionary from json file
+                    color_info = json.loads(json_file.read())
+                    self.color_cache[file_id] = color_info
+            colors = make_colorgram_tensor(color_info)
 
         image = Image.open(filename)
         image_width, image_height = image.size
