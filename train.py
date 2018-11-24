@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from trainer import VggUnetTrainer, ResGenTrainer, ResUnetTrainer
 from trainer import Style2PaintTrainer, ResidualTrainer
 from trainer import DeepPaintTrainer, AttentionPaintTrainer
+from trainer import DeepUNetTrainer
 
 from utils import get_default_argparser
 
@@ -24,9 +25,10 @@ TRIANER_MAP = {
     'residual': ResidualTrainer,
     'deeppaint': DeepPaintTrainer,
     'attention': AttentionPaintTrainer,
+    'deepunet': DeepUNetTrainer,
 }
 
-COLORGRAM_ENABLE = ('deeppaint', 'attention')
+COLORGRAM_ENABLE = ('deeppaint', 'attention', 'deepunet')
 
 
 def main(args):
@@ -77,7 +79,7 @@ def main(args):
             print('Epoch %d finished' % epoch)
 
     else:
-        trainer.validate(val_data, 0, args.sample)
+        trainer.validate(val_data, 1, args.sample)
 
 
 if __name__ == "__main__":

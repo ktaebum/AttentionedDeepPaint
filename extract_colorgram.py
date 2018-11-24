@@ -40,9 +40,9 @@ for filename in img_files:
     image_id = filename.split('/')[-1][:-4]
 
     # resize
-    out_file = os.path.join(resize_path, '%s.png' % image_id)
-    image = image.resize((224, 224))
-    image.save(out_file)
+    #  out_file = os.path.join(resize_path, '%s.png' % image_id)
+    #  image = image.resize((224, 224))
+    #  image.save(out_file)
 
     # get json
     out_file = os.path.join(out_path, '%s.json' % image_id)
