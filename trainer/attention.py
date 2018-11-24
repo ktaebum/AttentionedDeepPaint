@@ -80,6 +80,8 @@ class AttentionPaintTrainer(ModelTrainer):
         # loss values for tracking
         self.loss_G_gan = AverageTracker('loss_G_gan')
         self.loss_G_l1 = AverageTracker('loss_G_l1')
+        self.loss_G_guide1 = AverageTracker('loss_G_guide1')
+        self.loss_G_guide2 = AverageTracker('loss_G_guide2')
         self.loss_D_real = AverageTracker('loss_D_real')
         self.loss_D_fake = AverageTracker('loss_D_fake')
 
@@ -87,13 +89,16 @@ class AttentionPaintTrainer(ModelTrainer):
         self.imageA = None
         self.imageB = None
         self.fakeB = None
+        self.guide1 = None
+        self.guide2 = None
 
     def train(self, last_iteration):
         """
         Run single epoch
         """
         average_trackers = [
-            self.loss_G_gan, self.loss_D_fake, self.loss_D_real, self.loss_G_l1
+            self.loss_G_gan, self.loss_D_fake, self.loss_D_real,
+            self.loss_G_guide1, self.loss_G_guide2, self.loss_G_l1
         ]
         self.generator.train()
         self.discriminator.train()
@@ -110,7 +115,7 @@ class AttentionPaintTrainer(ModelTrainer):
             colors = colors.to(self.device)
 
             # run forward propagation
-            self.fakeB = self.generator(
+            self.fakeB, self.guide1, self.guide2 = self.generator(
                 self.imageA,
                 colors,
                 self.extract_vgg_features(self.imageB),
@@ -120,16 +125,21 @@ class AttentionPaintTrainer(ModelTrainer):
             self._update_generator()
 
             if self.args.verbose and i % self.args.print_every == 0:
-                print('%s = %f, %s = %f, %s = %f, %s = %f' % (
-                    self.loss_D_real.name,
-                    self.loss_D_real(),
-                    self.loss_D_fake.name,
-                    self.loss_D_fake(),
-                    self.loss_G_gan.name,
-                    self.loss_G_gan(),
-                    self.loss_G_l1.name,
-                    self.loss_G_l1(),
-                ))
+                print(
+                    '%s = %f, %s = %f, %s = %f, %s = %f, %s = %f, %s = %f' % (
+                        self.loss_D_real.name,
+                        self.loss_D_real(),
+                        self.loss_D_fake.name,
+                        self.loss_D_fake(),
+                        self.loss_G_gan.name,
+                        self.loss_G_gan(),
+                        self.loss_G_l1.name,
+                        self.loss_G_l1(),
+                        self.loss_G_guide1.name,
+                        self.loss_G_guide1(),
+                        self.loss_G_guide2.name,
+                        self.loss_G_guide2(),
+                    ))
 
         self.log_file.write(
             '%f\t%f\t%f\t%f\n' % (self.loss_D_real(), self.loss_D_fake(),
@@ -173,7 +183,7 @@ class AttentionPaintTrainer(ModelTrainer):
             colors = colors.unsqueeze(0).to(self.device)
 
             with torch.no_grad():
-                fakeB = self.generator(
+                _, fakeB, _ = self.generator(
                     imageA,
                     colors,
                     self.extract_vgg_features(styleB),
@@ -258,10 +268,12 @@ class AttentionPaintTrainer(ModelTrainer):
             optimizer=self.optimizers['D'])
 
     def extract_vgg_features(self, image):
-
+        feature1 = self.vgg_features[:40]
+        feature2 = self.vgg_features[40:]
         with torch.no_grad():
-            image = self.vgg_features(image)
-        return image
+            style1 = feature1(image)
+            style2 = feature2(style1)
+        return style1, style2
 
     def _set_optimizers(self):
         optimG = optim.Adam(
@@ -293,10 +305,15 @@ class AttentionPaintTrainer(ModelTrainer):
         logit_fake = self.discriminator(fake_AB)
         loss_G_gan = gan_loss(logit_fake, True)
 
-        loss_G_l1 = l1_loss(self.fakeB, self.imageB) * self.args.lambd
+        loss_G_guide1 = l1_loss(self.guide1, self.imageB) * self.args.alpha
+        loss_G_guide2 = l1_loss(self.guide2, self.imageB) * self.args.beta
+        loss_G_l1 = (l1_loss(self.fakeB, self.imageB) + loss_G_guide1 +
+                     loss_G_guide2) * self.args.lambd
 
         self.loss_G_gan.update(loss_G_gan.item(), batch_size)
         self.loss_G_l1.update(loss_G_l1.item(), batch_size)
+        self.loss_G_guide1.update(loss_G_guide1.item(), batch_size)
+        self.loss_G_guide2.update(loss_G_guide2.item(), batch_size)
 
         loss_G = loss_G_gan + loss_G_l1
 

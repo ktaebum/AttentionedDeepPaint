@@ -39,6 +39,6 @@
 
 
 python train.py --learning-rate 0.0002 --beta1 0.5 --verbose \
-       --batch-size 4 --save-every 10 --lambd 200 --model attention \
+       --batch-size 4 --save-every 10 --lambd 150 --model attention \
        --sample 4 --no-mse --norm batch --num-epochs 50 --print-every 200 \
-       --train
+       --train --alpha 0.6 --beta 0.8

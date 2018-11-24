@@ -80,7 +80,6 @@ class DeepPaintGenerator(nn.Module):
 
         self.bias = bias
         self.dim = 64
-        self.bridge_channel = 4096
         self.relu = nn.ReLU(True)
 
         self.down_sampler = self._down_sample()

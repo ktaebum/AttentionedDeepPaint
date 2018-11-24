@@ -7,6 +7,8 @@ No guide, add attention
 import torch
 import torch.nn as nn
 
+from models.deeppaint import DeepPaintGuideBlock
+
 Norm = nn.InstanceNorm2d
 Norm = nn.BatchNorm2d
 
@@ -21,15 +23,13 @@ class AttentionPaintGenerator(nn.Module):
 
         self.bias = bias
         self.dim = 64
-        self.bridge_channel = 4096
+        self.bridge_channel = self.dim * 8
         self.relu = nn.ReLU(True)
 
         self.down_sampler = self._down_sample()
         self.up_sampler = self._up_sample()
-
-        self.bridge = nn.Sequential(
-            nn.Conv2d(self.dim * 8, self.dim * 8, 3, 1, 1, bias=bias),
-            Norm(self.dim * 8), nn.ReLU(True))
+        self.guide1 = self._guide_decoder()
+        self.guide2 = self._guide_decoder()
 
         for module in self.modules():
             if isinstance(module, nn.Conv2d):
@@ -46,18 +46,50 @@ class AttentionPaintGenerator(nn.Module):
         image = torch.cat([image, colors], 1)
 
         for i, layer in enumerate(self.down_sampler):
+            if i == len(self.down_sampler) - 1:
+                guide1 = self.forward_guide1(image,
+                                             list(map(lambda x: x[1], cache)))
             image, connection, idx = layer(image)
             cache.append((connection, idx))
 
         cache = list(reversed(cache))
-        image = image + style
-        image = self.bridge(image)
 
         for i, (layer, (connection, idx)) in enumerate(
                 zip(self.up_sampler, cache)):
             image = layer(image, connection, idx)
+            if i == 0:
+                image = image + style[1]
+                guide2 = self.forward_guide2(image,
+                                             list(map(lambda x: x[1], cache)))
+            elif i == 1:
+                image = image + style[0]
 
-        return image
+        return image, guide1, guide2
+
+    def forward_guide1(self, x, idxs):
+        idxs = list(reversed(idxs))
+        for layer, idx in zip(self.guide1, idxs):
+            x = layer(x, idx)
+        return x
+
+    def forward_guide2(self, x, idxs):
+        idxs = idxs[1:]
+        for layer, idx in zip(self.guide2, idxs):
+            x = layer(x, idx)
+        return x
+
+    def _guide_decoder(self):
+        layers = nn.ModuleList()
+        layers.append(
+            DeepPaintGuideBlock(self.dim * 8, self.dim * 8, self.bias))
+        layers.append(
+            DeepPaintGuideBlock(self.dim * 8, self.dim * 4, self.bias))
+        layers.append(
+            DeepPaintGuideBlock(self.dim * 4, self.dim * 2, self.bias))
+        layers.append(
+            DeepPaintGuideBlock(self.dim * 2, self.dim * 1, self.bias))
+        layers.append(DeepPaintGuideBlock(self.dim * 1, 3, self.bias, True))
+        return layers
 
     def _down_sample(self):
         layers = nn.ModuleList()
@@ -82,17 +114,16 @@ class AttentionPaintGenerator(nn.Module):
             AttentionPaintDownSample(self.dim * 8, self.dim * 8, self.bias))
 
         # 8
-        #  layers.append(
-        #  AttentionPaintDownSample(self.dim * 8, self.bridge_channel,
-        #                               self.bias))
+        layers.append(
+            AttentionPaintDownSample(self.dim * 8, self.dim * 8, self.bias))
 
         return layers
 
     def _up_sample(self):
         layers = nn.ModuleList()
-        #  layers.append(
-        #  AttentionPaintUpSample(self.bridge_channel * 2, self.dim * 8,
-        #                             self.bias, True))
+        layers.append(
+            AttentionPaintUpSample(self.dim * 8 * 2, self.dim * 8, self.bias,
+                                   True))
         layers.append(
             AttentionPaintUpSample(self.dim * 8 * 2, self.dim * 8, self.bias,
                                    True))
