@@ -22,6 +22,8 @@
   - How about extract color histogram for 4 seperated region (top to bottom)
 
 ### Examples
+
+Sketch - Style - Output - Ground Truth - Color Histogram of Style
 ![DU1](https://i.imgur.com/Ea0Pv7b.png)
 ![DU2](https://i.imgur.com/CTYQIUY.png)
 <!-- ![DU3](https://i.imgur.com/SFyhg3C.png) -->
