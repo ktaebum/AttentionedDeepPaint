@@ -7,6 +7,8 @@ from models.resunet import ResUnet, ResidualUnet
 from models.style2paint import StylePaintGenerator, StylePaintDiscriminator
 from models.deeppaint import DeepPaintGenerator
 
+from models.deepunet import DeepUNetPaintGenerator
+
 __all__ = [
     'Pix2PixGenerator',
     'PatchGAN',
@@ -19,4 +21,5 @@ __all__ = [
     'StylePaintDiscriminator',
     'ResidualUnet',
     'DeepPaintGenerator',
+    'DeepUNetPaintGenerator',
 ]

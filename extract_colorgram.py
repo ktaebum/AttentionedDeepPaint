@@ -6,12 +6,16 @@ import json
 import os
 import glob
 
-from PIL import Image
+from PIL import Image, ImageOps
 from colorgram import colorgram as cgm
 
 out_path = './data/pair_niko/colorgram'
+resize_path = './data/pair_niko/resize'
 if not os.path.exists(out_path):
     os.mkdir(out_path)
+if not os.path.exists(resize_path):
+    os.mkdir(resize_path)
+
 data_path = './data/pair_niko'
 
 img_files = glob.glob(os.path.join(data_path, 'train/*.png'))
@@ -34,6 +38,13 @@ for filename in img_files:
     image = image.crop((0, 0, width // 2, height))
 
     image_id = filename.split('/')[-1][:-4]
+
+    # resize
+    #  out_file = os.path.join(resize_path, '%s.png' % image_id)
+    #  image = image.resize((224, 224))
+    #  image.save(out_file)
+
+    # get json
     out_file = os.path.join(out_path, '%s.json' % image_id)
     if os.path.exists(out_file):
         # for continuation
