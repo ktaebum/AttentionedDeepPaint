@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 
 from trainer import VggUnetTrainer, ResGenTrainer, ResUnetTrainer
 from trainer import Style2PaintTrainer, ResidualTrainer
-from trainer import DeepPaintTrainer, AttentionPaintTrainer
+from trainer import DeepPaintTrainer
 from trainer import DeepUNetTrainer
 
 from utils import get_default_argparser
@@ -24,11 +24,10 @@ TRIANER_MAP = {
     'style2paint': Style2PaintTrainer,
     'residual': ResidualTrainer,
     'deeppaint': DeepPaintTrainer,
-    'attention': AttentionPaintTrainer,
     'deepunet': DeepUNetTrainer,
 }
 
-COLORGRAM_ENABLE = ('deeppaint', 'attention', 'deepunet')
+COLORGRAM_ENABLE = ('deeppaint', 'deepunet')
 
 
 def main(args):
