@@ -12,7 +12,7 @@ from PIL import Image
 
 from trainer.trainer import ModelTrainer
 
-from models import StylePaintDiscriminator
+from models import StylePaintDiscriminator, PatchGAN
 from models import DeepUNetPaintGenerator
 
 from utils import GANLoss
@@ -42,8 +42,7 @@ class DeepUNetTrainer(ModelTrainer):
         # build model
         self.resolution = self.args.resolution
         self.generator = DeepUNetPaintGenerator().to(self.device)
-        self.discriminator = StylePaintDiscriminator(self.args.no_mse).to(
-            self.device)
+        self.discriminator = PatchGAN(sigmoid=self.args.no_mse).to(self.device)
 
         # set optimizers
         self.optimizers = self._set_optimizers()
@@ -130,8 +129,8 @@ class DeepUNetTrainer(ModelTrainer):
         return i
 
     def validate(self, dataset, epoch, samples=3):
-        self.generator.eval()
-        self.discriminator.eval()
+        # self.generator.eval()
+        # self.discriminator.eval()
         length = len(dataset)
 
         # sample images

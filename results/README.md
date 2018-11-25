@@ -1,5 +1,44 @@
 # Experiment Results
 
+## DeepResidualPaint Application
+### Configuration
+  - Based on SegUnet with Color Histogram
+  - Replaced single convolutional layer with Residual Block
+  - Removed Guide Decoder
+  - Removed Feature Extraction (Just Color Histogram)
+
+    Hyperparameter   | Value
+    --------------   | ---------
+    `learning_rate`  | `0.0002`
+    `beta1 (optimizer)`  | `0.5`
+    `batch_size`  | `4`
+    `lambda`  | `100`
+    `epochs`  | `15`
+    `learning_rate schedule`  | `None`
+    `Discriminator` | `PatchGAN`
+
+### Discussion
+  - Let's apply attention mechanism (maybe our final work)
+  - How about extract color histogram for 4 seperated region (top to bottom)
+
+### Examples
+![DU1](https://i.imgur.com/Ea0Pv7b.png)
+![DU2](https://i.imgur.com/CTYQIUY.png)
+![DU3](https://i.imgur.com/SFyhg3C.png)
+![DU4](https://i.imgur.com/EbAP1kg.png)
+![DU5](https://i.imgur.com/0ymbW4b.png)
+![DU6](https://i.imgur.com/96kkdYa.png)
+![DU7](https://i.imgur.com/dOpLiNG.png)
+![DU8](https://i.imgur.com/Xk4qGFD.png)
+![DU9](https://i.imgur.com/5zoVCwd.png)
+![DU10](https://i.imgur.com/tBo26pX.png)
+![DU11](https://i.imgur.com/PU03JhR.png)
+![DU12](https://i.imgur.com/8NVbV58.png)
+### Train Log
+![train](https://i.imgur.com/trkBnx4.png)
+
+
+
 ## DeepPaint Application
 ### Configuration
   - Our idea (Using SegUnet with Colorgram)
