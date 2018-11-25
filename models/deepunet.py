@@ -1,6 +1,5 @@
 """
-Improvement of DeepPaint
-
+Improvement of DeepPaint With Residual Block
 """
 
 import torch
@@ -11,7 +10,7 @@ Norm = nn.BatchNorm2d
 
 class DeepUNetPaintGenerator(nn.Module):
     """
-    Use Unet & SegNet feature
+    Use Unet & SegNet & Residual Block feature
     """
 
     def __init__(self, bias=True):
@@ -140,8 +139,8 @@ class DeepUNetDownSample(nn.Module):
 
 class DeepUNetUpSample(nn.Module):
     """
-    It's duplicate of DeepPaintUpSample now,
-    but attention features will be added
+    TODO:
+        attention features will be added
     """
 
     def __init__(self, in_channels, out_channels, bias=True, dropout=False):
