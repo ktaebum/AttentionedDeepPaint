@@ -203,6 +203,11 @@ class DeepUNetTrainer(ModelTrainer):
                 color3 = toPIL(re_scale(colors[6:9].detach().cpu()))
                 color4 = toPIL(re_scale(colors[9:12].detach().cpu()))
 
+                color1 = color1.rotate(90)
+                color2 = color2.rotate(90)
+                color3 = color3.rotate(90)
+                color4 = color4.rotate(90)
+
                 color_result = Image.new('RGB',
                                          (self.resolution, self.resolution))
                 color_result.paste(
