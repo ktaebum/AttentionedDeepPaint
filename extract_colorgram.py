@@ -6,7 +6,7 @@ import json
 import os
 import glob
 
-from PIL import Image, ImageOps
+from PIL import Image
 from colorgram import colorgram as cgm
 
 out_path = './data/pair_niko/colorgram'
