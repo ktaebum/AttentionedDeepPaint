@@ -1,11 +1,13 @@
 """
-Preprocess niko dataset and generate pair image
+Preprocess train/validation dataset and generate pair image
 """
 import os
 import glob
 import json
+import random
 
-from . import scale, make_colorgram_tensor
+from preprocess import scale
+from preprocess import make_colorgram_tensor2
 
 from PIL import Image
 
@@ -81,7 +83,7 @@ class NikoPairedDataset(Dataset):
                     # load color info dictionary from json file
                     color_info = json.loads(json_file.read())
                     self.color_cache[file_id] = color_info
-            colors = make_colorgram_tensor(color_info)
+            colors = make_colorgram_tensor2(color_info)
 
         image = Image.open(filename)
         image_width, image_height = image.size
