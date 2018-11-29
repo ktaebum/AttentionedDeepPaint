@@ -5,6 +5,8 @@ Improvement of DeepPaint With Residual Block
 import torch
 import torch.nn as nn
 
+from models import AttentionBlock
+
 Norm = nn.BatchNorm2d
 
 
@@ -21,11 +23,20 @@ class DeepUNetPaintGenerator(nn.Module):
 
         self.down_sampler = self._down_sample()
         self.up_sampler = self._up_sample()
+        self.attentions = self._attention_blocks()
 
         self.first_layer = nn.Sequential(
             nn.Conv2d(15, self.dim, 3, 1, 1, bias=bias),
             Norm(self.dim),
         )
+
+        self.gate_block = nn.Sequential(
+            nn.Conv2d(
+                self.dim * 8,
+                self.dim * 8,
+                kernel_size=1,
+                stride=1,
+                bias=self.bias), nn.BatchNorm2d(self.dim * 8))
 
         self.last_layer = nn.Sequential(
             nn.ReLU(True),
@@ -53,14 +64,41 @@ class DeepUNetPaintGenerator(nn.Module):
             cache.append((connection, idx))
 
         cache = list(reversed(cache))
+        gate = self.gate_block(image)
 
-        for i, (layer, (connection, idx)) in enumerate(
-                zip(self.up_sampler, cache)):
+        for i, (layer, attention, (connection, idx)) in enumerate(
+                zip(self.up_sampler, self.attentions, cache)):
+            connection, attr = attention(connection, gate)
             image = layer(image, connection, idx)
 
         image = self.last_layer(image)
 
         return image
+
+    def _attention_blocks(self):
+        layers = nn.ModuleList()
+
+        gate_channels = self.dim * 8
+
+        layers.append(
+            AttentionBlock(self.dim * 8, gate_channels, bias=self.bias))
+
+        layers.append(
+            AttentionBlock(self.dim * 8, gate_channels, bias=self.bias))
+
+        layers.append(
+            AttentionBlock(self.dim * 8, gate_channels, bias=self.bias))
+
+        layers.append(
+            AttentionBlock(self.dim * 8, gate_channels, bias=self.bias))
+
+        layers.append(
+            AttentionBlock(self.dim * 4, gate_channels, bias=self.bias))
+
+        layers.append(
+            AttentionBlock(self.dim * 2, gate_channels, bias=self.bias))
+
+        return layers
 
     def _down_sample(self):
         layers = nn.ModuleList()

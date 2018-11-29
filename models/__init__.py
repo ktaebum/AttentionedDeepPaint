@@ -7,6 +7,7 @@ from models.resunet import ResUnet, ResidualUnet
 from models.style2paint import StylePaintGenerator, StylePaintDiscriminator
 from models.deeppaint import DeepPaintGenerator
 
+from models.attention import AttentionBlock
 from models.deepunet import DeepUNetPaintGenerator
 
 __all__ = [
@@ -22,4 +23,5 @@ __all__ = [
     'ResidualUnet',
     'DeepPaintGenerator',
     'DeepUNetPaintGenerator',
+    'AttentionBlack',
 ]
