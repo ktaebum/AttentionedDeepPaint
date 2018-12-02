@@ -2,7 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-log_root = './data/logs/2018_Nov_24_22:00:08/'
+log_root = './data/logs/attention/'
 
 log_file = os.path.join(log_root, 'loss.txt')
 
