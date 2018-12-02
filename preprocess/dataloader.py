@@ -6,7 +6,7 @@ import glob
 import json
 
 from preprocess import scale
-from preprocess import make_colorgram_tensor2
+from preprocess import make_colorgram_tensor
 
 from PIL import Image
 
@@ -14,9 +14,8 @@ from torchvision import transforms
 from torch.utils.data import Dataset
 
 
-class NikoPairedDataset(Dataset):
+class PairedDataset(Dataset):
     """
-    Niko Manga Paired Dataset
     Composed of
     (colorized image, sketch image)
     """
@@ -82,7 +81,7 @@ class NikoPairedDataset(Dataset):
                     # load color info dictionary from json file
                     color_info = json.loads(json_file.read())
                     self.color_cache[file_id] = color_info
-            colors = make_colorgram_tensor2(color_info)
+            colors = make_colorgram_tensor(color_info)
 
         image = Image.open(filename)
         image_width, image_height = image.size

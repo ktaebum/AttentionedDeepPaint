@@ -64,14 +64,17 @@ class DeepUNetPaintGenerator(nn.Module):
 
         cache = list(reversed(cache))
         gate = self.gate_block(image)
+        attentions = []
+
         for i, (layer, attention, (connection, idx)) in enumerate(
                 zip(self.up_sampler, self.attentions, cache)):
             connection, attr = attention(connection, gate)
             image = layer(image, connection, idx)
+            attentions.append(attr)
 
         image = self.last_layer(image)
 
-        return image
+        return image, attentions
 
     def _attention_blocks(self):
         layers = nn.ModuleList()

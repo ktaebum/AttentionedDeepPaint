@@ -6,28 +6,19 @@ import torch
 
 from torch.utils.data import DataLoader
 
-from trainer import VggUnetTrainer, ResGenTrainer, ResUnetTrainer
-from trainer import Style2PaintTrainer, ResidualTrainer
-from trainer import DeepPaintTrainer
 from trainer import DeepUNetTrainer
 
 from utils import get_default_argparser
 
-from preprocess import NikoPairedDataset
+from preprocess import PairedDataset
 
 from torchvision import transforms
 
 TRIANER_MAP = {
-    'vggunet': VggUnetTrainer,
-    'resgen': ResGenTrainer,
-    'resunet': ResUnetTrainer,
-    'style2paint': Style2PaintTrainer,
-    'residual': ResidualTrainer,
-    'deeppaint': DeepPaintTrainer,
     'deepunet': DeepUNetTrainer,
 }
 
-COLORGRAM_ENABLE = ('deeppaint', 'deepunet')
+COLORGRAM_ENABLE = ('deepunet')
 
 
 def main(args):
@@ -42,7 +33,7 @@ def main(args):
     ])
 
     # assign data loader
-    train_data = NikoPairedDataset(
+    train_data = PairedDataset(
         transform=train_transform,
         color_histogram=(args.model in COLORGRAM_ENABLE),
     )
@@ -52,7 +43,7 @@ def main(args):
         batch_size=args.batch_size,
     )
 
-    val_data = NikoPairedDataset(
+    val_data = PairedDataset(
         transform=val_transform,
         mode='val',
         color_histogram=(args.model in COLORGRAM_ENABLE),

@@ -102,8 +102,8 @@ class DeepUNetTrainer(ModelTrainer):
             self.imageB = imageB.to(self.device)
             colors = colors.to(self.device)
 
-            # run forward propagation
-            self.fakeB = self.generator(
+            # run forward propagation. ignore attention
+            self.fakeB, _ = self.generator(
                 self.imageA,
                 colors,
             )
@@ -170,7 +170,7 @@ class DeepUNetTrainer(ModelTrainer):
                 colors = colors.unsqueeze(0).to(self.device)
 
                 with torch.no_grad():
-                    fakeB = self.generator(
+                    fakeB, _ = self.generator(
                         imageA,
                         colors,
                     )

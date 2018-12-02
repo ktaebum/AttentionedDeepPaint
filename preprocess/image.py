@@ -12,7 +12,7 @@ from PIL import Image
 from colorgram import colorgram
 
 
-def make_colorgram_tensor2(color_info, width=512, height=512):
+def make_colorgram_tensor(color_info, width=512, height=512):
     """
     divided by 4 regions
     """
@@ -40,33 +40,6 @@ def make_colorgram_tensor2(color_info, width=512, height=512):
             tensor[blue, idx:idx + region] *= b
 
     tensor = torch.from_numpy(tensor.copy())
-    return scale(tensor / 255.)
-
-
-def make_colorgram_tensor(color_info, width=512, height=512):
-    """
-    get color_info dictionary
-    Then build color tensor
-    """
-
-    topk = len(color_info.keys())
-
-    tensor = torch.ones([topk * 3, width, height])
-
-    for i in range(1, topk + 1):
-        # get value
-        r, g, b = color_info[str(i)]
-
-        # assign index
-        red = (i - 1) * 3
-        green = (i - 1) * 3 + 1
-        blue = (i - 1) * 3 + 2
-
-        # assign values
-        tensor[red] *= r
-        tensor[green] *= g
-        tensor[blue] *= b
-
     return scale(tensor / 255.)
 
 
