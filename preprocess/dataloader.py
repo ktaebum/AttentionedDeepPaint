@@ -1,11 +1,12 @@
 """
-Preprocess niko dataset and generate pair image
+Preprocess train/validation dataset and generate pair image
 """
 import os
 import glob
 import json
 
-from . import scale, make_colorgram_tensor
+from preprocess import scale
+from preprocess import make_colorgram_tensor
 
 from PIL import Image
 
@@ -13,9 +14,8 @@ from torchvision import transforms
 from torch.utils.data import Dataset
 
 
-class NikoPairedDataset(Dataset):
+class PairedDataset(Dataset):
     """
-    Niko Manga Paired Dataset
     Composed of
     (colorized image, sketch image)
     """

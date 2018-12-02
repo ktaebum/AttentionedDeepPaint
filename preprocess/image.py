@@ -14,28 +14,32 @@ from colorgram import colorgram
 
 def make_colorgram_tensor(color_info, width=512, height=512):
     """
-    get color_info dictionary
-    Then build color tensor
+    divided by 4 regions
     """
 
-    topk = len(color_info.keys())
+    colors = list(color_info.values())
+    topk = len(colors[0].keys())
 
-    tensor = torch.ones([topk * 3, width, height])
+    tensor = np.ones([topk * 3, height, width], dtype=np.float32)
 
-    for i in range(1, topk + 1):
-        # get value
-        r, g, b = color_info[str(i)]
+    region = height // 4
 
-        # assign index
-        red = (i - 1) * 3
-        green = (i - 1) * 3 + 1
-        blue = (i - 1) * 3 + 2
+    for i, color in enumerate(colors):
+        idx = region * i
+        for j in range(1, topk + 1):
+            r, g, b = color[str(j)]
 
-        # assign values
-        tensor[red] *= r
-        tensor[green] *= g
-        tensor[blue] *= b
+            # assign index
+            red = (j - 1) * 3
+            green = (j - 1) * 3 + 1
+            blue = (j - 1) * 3 + 2
 
+            # assign values
+            tensor[red, idx:idx + region] *= r
+            tensor[green, idx:idx + region] *= g
+            tensor[blue, idx:idx + region] *= b
+
+    tensor = torch.from_numpy(tensor.copy())
     return scale(tensor / 255.)
 
 

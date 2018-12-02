@@ -12,7 +12,7 @@ from PIL import Image
 
 from trainer.trainer import ModelTrainer
 
-from models import StylePaintDiscriminator, PatchGAN
+from models import PatchGAN
 from models import DeepUNetPaintGenerator
 
 from utils import GANLoss
@@ -102,8 +102,8 @@ class DeepUNetTrainer(ModelTrainer):
             self.imageB = imageB.to(self.device)
             colors = colors.to(self.device)
 
-            # run forward propagation
-            self.fakeB = self.generator(
+            # run forward propagation. ignore attention
+            self.fakeB, _ = self.generator(
                 self.imageA,
                 colors,
             )
@@ -170,7 +170,7 @@ class DeepUNetTrainer(ModelTrainer):
                 colors = colors.unsqueeze(0).to(self.device)
 
                 with torch.no_grad():
-                    fakeB = self.generator(
+                    fakeB, _ = self.generator(
                         imageA,
                         colors,
                     )
@@ -202,6 +202,11 @@ class DeepUNetTrainer(ModelTrainer):
                 color2 = toPIL(re_scale(colors[3:6].detach().cpu()))
                 color3 = toPIL(re_scale(colors[6:9].detach().cpu()))
                 color4 = toPIL(re_scale(colors[9:12].detach().cpu()))
+
+                color1 = color1.rotate(90)
+                color2 = color2.rotate(90)
+                color3 = color3.rotate(90)
+                color4 = color4.rotate(90)
 
                 color_result = Image.new('RGB',
                                          (self.resolution, self.resolution))
