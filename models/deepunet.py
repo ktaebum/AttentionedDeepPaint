@@ -5,7 +5,7 @@ Improvement of DeepPaint With Residual Block
 import torch
 import torch.nn as nn
 
-from models import AttentionBlock
+from models.attention import AttentionBlock
 
 Norm = nn.BatchNorm2d
 
@@ -29,7 +29,6 @@ class DeepUNetPaintGenerator(nn.Module):
             nn.Conv2d(15, self.dim, 3, 1, 1, bias=bias),
             Norm(self.dim),
         )
-
         self.gate_block = nn.Sequential(
             nn.Conv2d(
                 self.dim * 8,
@@ -65,7 +64,6 @@ class DeepUNetPaintGenerator(nn.Module):
 
         cache = list(reversed(cache))
         gate = self.gate_block(image)
-
         for i, (layer, attention, (connection, idx)) in enumerate(
                 zip(self.up_sampler, self.attentions, cache)):
             connection, attr = attention(connection, gate)

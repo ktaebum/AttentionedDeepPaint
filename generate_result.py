@@ -1,7 +1,6 @@
 import torch
 
 import os
-import glob
 import random
 
 from PIL import Image
@@ -19,7 +18,7 @@ val_root = './data/pair_niko/val/img'
 out_root = './data/test_result'
 if not os.path.exists(out_root):
     os.mkdir(out_root)
-generator = 'deepunet4G.pth.tar'
+generator = 'deepunetG_015.pth.tar'
 
 model = DeepUNetPaintGenerator()
 for param in model.parameters():

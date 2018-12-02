@@ -12,7 +12,7 @@ from PIL import Image
 
 from trainer.trainer import ModelTrainer
 
-from models import StylePaintDiscriminator, PatchGAN
+from models import PatchGAN
 from models import DeepUNetPaintGenerator
 
 from utils import GANLoss

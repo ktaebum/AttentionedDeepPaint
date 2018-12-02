@@ -4,7 +4,6 @@ Preprocess train/validation dataset and generate pair image
 import os
 import glob
 import json
-import random
 
 from preprocess import scale
 from preprocess import make_colorgram_tensor2
