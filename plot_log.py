@@ -33,9 +33,9 @@ ax.plot(
 ax.plot(epochs, g_loss, marker='o', label='G Loss', linewidth=3, markersize=8)
 ax.plot(
     epochs,
-    re_loss / 100,
+    re_loss,
     marker='o',
-    label='Reconstruction Loss',
+    label=r'Reconstruction Loss $\times$ 100',
     linewidth=3,
     markersize=8)
 

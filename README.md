@@ -2,18 +2,29 @@
 
 ## Automatic Anime Sketch Colorization Using Generative Adversarial Network (GAN)
 
-## Result Examples
+## Colorize Result Examples
 
 ![refer](https://i.imgur.com/lDzhfjK.png)
-![Result1](https://i.imgur.com/ls1gjNY.png)
 ![Result2](https://i.imgur.com/C49CdDC.png)
 ![Result3](https://i.imgur.com/lzHKnm0.png)
 ![Result4](https://i.imgur.com/kwMmfWp.png)
 ![Result5](https://i.imgur.com/bUEzmI6.png)
 ![Result6](https://i.imgur.com/6U1VWtL.png)
 ![Result7](https://i.imgur.com/q5Tr7y8.png)
+![Result8](https://i.imgur.com/1g5f0vE.png)
+![Result9](https://i.imgur.com/Rfvf9i4.png)
+![Result10](https://i.imgur.com/EpcLh22.png)
+![Result11](https://i.imgur.com/IzeXRMb.png)
 
 To see experiment trials, [click](https://github.com/ktaebum/AttentionedDeepPaint/tree/master/results)
+
+## Attention Map Result Examples
+![attrefer](https://i.imgur.com/Y1SPOFy.png)
+![Att1](https://i.imgur.com/AnqFQul.png)
+![Att2](https://i.imgur.com/Gs4yQq8.png)
+![Att3](https://i.imgur.com/40ZVsk7.png)
+![Att4](https://i.imgur.com/r5FhAwQ.png)
+![Att5](https://i.imgur.com/UV40RH3.png)
 
 ## Train Settings & Log
 
@@ -30,4 +41,6 @@ Hyperparameter   | Value
 
 ![Log](https://i.imgur.com/6qwIfXj.png)
 
-Maybe it can be trained more...?
+It seems that it can be trained more.  
+However, if train more, the reconstruction loss increase.  
+Based on this weird behavior, I recommand 15 epochs to train (max 20).

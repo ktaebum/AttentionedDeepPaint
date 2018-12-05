@@ -14,7 +14,6 @@ from preprocess import PairedDataset
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-val_root = './data/pair_niko/val/img'
 out_root = './data/test_result'
 if not os.path.exists(out_root):
     os.mkdir(out_root)
@@ -53,7 +52,7 @@ for i, (target, style) in enumerate(zip(targets, styles)):
     colors = colors.unsqueeze(0).to(device)
 
     with torch.no_grad():
-        fakeB = model(
+        fakeB, _ = model(
             imageA,
             colors,
         )

@@ -21,11 +21,10 @@ class PairedDataset(Dataset):
     """
 
     def __init__(self,
-                 root='./data/pair_niko',
+                 root='./data/',
                  mode='train',
                  transform=None,
                  color_histogram=False,
-                 need_resize=False,
                  size=512):
         """
         @param root: data root
@@ -35,15 +34,14 @@ class PairedDataset(Dataset):
         @param color_histogram: extract color_histogram
         @param size: image crop (or resize) size
         """
-        if mode not in {'train', 'val', 'test'}:
-            raise ValueError('Invalid Dataset. Pick among (train, val, test)')
+        if mode not in {'train', 'val'}:
+            raise ValueError('Invalid Dataset. Pick among (train, val)')
 
         root = os.path.join(root, mode)
 
         self.is_train = (mode == 'train')
         self.transform = transform
         self.image_files = glob.glob(os.path.join(root, '*.png'))
-        self.resize = need_resize
         self.color_histogram = color_histogram
         self.size = size
         self.color_cache = {}
@@ -76,8 +74,8 @@ class PairedDataset(Dataset):
             color_info = self.color_cache.get(file_id, None)
             if color_info is None:
                 with open(
-                        os.path.join('./data/pair_niko/colorgram',
-                                     '%s.json' % file_id), 'r') as json_file:
+                        os.path.join('./data/colorgram', '%s.json' % file_id),
+                        'r') as json_file:
                     # load color info dictionary from json file
                     color_info = json.loads(json_file.read())
                     self.color_cache[file_id] = color_info
@@ -112,12 +110,6 @@ class PairedDataset(Dataset):
         imageB = padding(imageB)
         imageB = crop(imageB)
 
-        if self.resize:
-            resizeA = Image.open(
-                os.path.join('./data/pair_niko/resize', '%s.png' % file_id))
-            resizeA = transforms.ToTensor()(resizeA)
-            resizeA = scale(resizeA)
-
         if self.transform is not None:
             imageA = self.transform(imageA)
             imageB = self.transform(imageB)
@@ -126,12 +118,6 @@ class PairedDataset(Dataset):
         imageA = scale(imageA)
         imageB = scale(imageB)
         if not self.color_histogram:
-            if self.resize:
-                return imageA, imageB, resizeA
-            else:
-                return imageA, imageB
+            return imageA, imageB
         else:
-            if self.resize:
-                return imageA, imageB, colors, resizeA
-            else:
-                return imageA, imageB, colors
+            return imageA, imageB, colors

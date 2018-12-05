@@ -1,9 +1,7 @@
 import torch
-import torch.nn.functional as F
 
 import os
 import random
-import numpy as np
 
 import skimage.transform
 
@@ -18,7 +16,6 @@ from preprocess import PairedDataset
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-val_root = './data/pair_niko/val/img'
 out_root = './data/attention_result'
 if not os.path.exists(out_root):
     os.mkdir(out_root)
@@ -70,13 +67,6 @@ for i, (target, style) in enumerate(zip(targets, styles)):
                 upscale=512 // (image.shape[-1]),
                 multichannel=False,
             )
-        """
-        image = skimage.transform.pyramid_expand(
-            image,
-            upscale=16,
-            sigma=20,
-        )
-        """
         return to_pil(torch.Tensor(image).unsqueeze(0))
 
     attentions = list(map(lambda img: interpolate(img), attentions))
@@ -108,4 +98,3 @@ for i, (target, style) in enumerate(zip(targets, styles)):
     figure.paste(fakeB, (512 * 7, 0))
     figure.paste(imageB, (512 * 8, 0))
     save_image(figure, 'attention_%03d' % i, out_root)
-    # save_image(result, 'result_%03d' % i, out_root)
