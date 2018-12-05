@@ -44,3 +44,26 @@ Hyperparameter   | Value
 It seems that it can be trained more.  
 However, if train more, the reconstruction loss increase.  
 Based on this weird behavior, I recommand 15 epochs to train (max 20).
+
+## Dependency
+
+Refer [requirements](https://github.com/ktaebum/AttentionedDeepPaint/tree/master/requirements.txt)
+
+Install 
+1. Pytorch (>= 0.4.1)
+2. Torchvision (>= 0.2.1)
+based on your python version, os, cuda version etc...
+
+## Usage
+
+### Download dataset
+
+1. Create **data** folder
+2. go to [link](https://www.kaggle.com/ktaebum/animesketchcolorpair) and download
+3. unzip in **data** folder
+
+### Train
+
+`
+$ ./train.sh
+`

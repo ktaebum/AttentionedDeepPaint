@@ -30,7 +30,11 @@ class DeepUNetTrainer(ModelTrainer):
         # log file
         if self.args.train:
             ctime = time.ctime().split()
+
             log_path = './log'
+            if not os.path.exists(log_path):
+                os.mkdir(log_path)
+
             log_dir = os.path.join(
                 log_path,
                 '%s_%s_%s_%s' % (ctime[-1], ctime[1], ctime[2], ctime[3]))
@@ -39,8 +43,11 @@ class DeepUNetTrainer(ModelTrainer):
                 f.write(str(args))
             self.log_file = open(os.path.join(log_dir, 'loss.txt'), 'w')
 
+        self.save_path = './data/result'
+        if not os.path.exists(self.save_path):
+            os.mkdir(self.save_path)
+
         # build model
-        self.resolution = self.args.resolution
         self.generator = DeepUNetPaintGenerator().to(self.device)
         self.discriminator = PatchGAN(sigmoid=self.args.no_mse).to(self.device)
 
@@ -215,19 +222,19 @@ class DeepUNetTrainer(ModelTrainer):
                     (0, 0))
                 color_result.paste(
                     color2.crop((0, 0, self.resolution, self.resolution // 4)),
-                    (0, 512 // 4))
+                    (0, self.resolution // 4))
                 color_result.paste(
                     color3.crop((0, 0, self.resolution, self.resolution // 4)),
-                    (0, 512 // 4 * 2))
+                    (0, self.resolution // 4 * 2))
                 color_result.paste(
                     color4.crop((0, 0, self.resolution, self.resolution // 4)),
-                    (0, 512 // 4 * 3))
+                    (0, self.resolution // 4 * 3))
 
                 sub_result.paste(imageA, (0, 0))
-                sub_result.paste(styleB, (512, 0))
-                sub_result.paste(fakeB, (2 * 512, 0))
-                sub_result.paste(imageB, (3 * 512, 0))
-                sub_result.paste(color_result, (4 * 512, 0))
+                sub_result.paste(styleB, (self.resolution, 0))
+                sub_result.paste(fakeB, (2 * self.resolution, 0))
+                sub_result.paste(imageB, (3 * self.resolution, 0))
+                sub_result.paste(color_result, (4 * self.resolution, 0))
 
                 result.paste(sub_result, (0, 0 + self.resolution * i))
 
@@ -243,7 +250,7 @@ class DeepUNetTrainer(ModelTrainer):
             save_image(
                 result,
                 'deepunetpaint_%03d_%02d' % (epoch, j),
-                './data/pair_niko/result',
+                self.save_path,
             )
 
     def test(self):

@@ -16,6 +16,7 @@ class ModelTrainer:
         self.args = args
         self.data_loader = data_loader
         self.device = device
+        self.resolution = 512
 
     def train(self):
         raise NotImplementedError
