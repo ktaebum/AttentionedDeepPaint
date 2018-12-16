@@ -177,11 +177,6 @@ class DeepUNetDownSample(nn.Module):
 
 
 class DeepUNetUpSample(nn.Module):
-    """
-    TODO:
-        attention features will be added
-    """
-
     def __init__(self, in_channels, out_channels, bias=True, dropout=False):
         super(DeepUNetUpSample, self).__init__()
         self.pool = nn.MaxUnpool2d(2, 2)

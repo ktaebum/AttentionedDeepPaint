@@ -30,14 +30,11 @@ class PatchGAN(nn.Module):
         # 64 x 64
         layers.append(self._building_block(self.dim * 2, self.dim * 4))
 
-        # 32 x 32
-        layers.append(self._building_block(self.dim * 4, self.dim * 8))
-
-        # 31 x 31
+        # 63 x 63
         layers.append(
-            self._building_block(self.dim * 8, self.dim * 8, stride=1))
+            self._building_block(self.dim * 4, self.dim * 8, stride=1))
 
-        # 30 x 30
+        # 62 x62
         layers.append(
             nn.Sequential(
                 nn.Conv2d(self.dim * 8, 1, 4, 1, 1),
