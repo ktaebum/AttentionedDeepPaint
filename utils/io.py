@@ -41,8 +41,9 @@ def save_checkpoints(model,
     torch.save(save_state, save_name)
 
 
-def load_checkpoints(checkpoint, model, optimizer=None):
-    checkpoint = torch.load(os.path.join(__save_path__, checkpoint))
+def load_checkpoints(checkpoint, model, optimizer=None, device_type='cuda'):
+    checkpoint = torch.load(
+        os.path.join(__save_path__, checkpoint), map_location=device_type)
 
     last_epoch = checkpoint.get('last_epoch', 0)
     model_state = checkpoint.get('model_state', None)
