@@ -2,64 +2,9 @@
 Sketchfy Module
 """
 
-import torch
-import torch.nn as nn
-
-from preprocess.image import re_scale
 from PIL import Image, ImageOps, ImageFilter
-from torch.utils.serialization import load_lua
-from torchvision import transforms
+
 __valid_smooth__ = {'no', 'basic', 'more'}
-
-
-def simplify(image):
-    cache = load_lua('./checkpoints/model_gan.t7')
-    model = cache.model
-    if torch.cuda.is_available():
-        model.cuda()
-    image_mean = cache.mean
-    image_std = cache.std
-
-    model.evaluate()
-
-    image = image.convert('L')
-    width, height = image.size
-
-    padding_width = 8 - (width % 8) if width % 8 != 0 else 0
-    padding_height = 8 - (height % 8) if height % 8 != 0 else 0
-
-    image = (
-        (transforms.ToTensor()(image) - image_mean) / image_std).unsqueeze(0)
-
-    if padding_width != 0 or padding_height != 0:
-        image = nn.ReflectionPad2d((0, padding_width, 0,
-                                    padding_height))(image).data
-
-    image = model.forward(image).squeeze(0)
-    image = re_scale(image)
-    image = transforms.ToPILImage()(image.detach().cpu())
-
-    del model
-
-    return image
-
-
-def simplify_paired_image(image):
-    """
-    Simplify Preprocessed image - sketch pair image
-    """
-
-    width, height = image.size
-    colored = image.crop((0, 0, width // 2, height))
-    sketch = image.crop((width // 2, 0, width, height))
-    sketch = simplify(sketch)
-
-    simplified_concat = Image.new('RGB', (width, height))
-
-    simplified_concat.paste(colored, (0, 0))
-    simplified_concat.paste(sketch, (width // 2, 0))
-
-    return simplified_concat
 
 
 def get_sketch(image, smooth='basic', smooth_iter=1):
