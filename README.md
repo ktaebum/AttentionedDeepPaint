@@ -13,13 +13,10 @@ based on your python version, os, cuda version etc...
 
 ## Usage
 
-### Download dataset (Deprecated)
+### Download dataset
 
-This dataset is old dataset (PIL based edge detected)
-
-1. Create **data** folder
-2. go to [link](https://www.kaggle.com/ktaebum/animesketchcolorpair) and download
-3. unzip in **data** folder
+1. go to [link](https://www.kaggle.com/ktaebum/anime-sketch-colorization-pair) and download
+2. unzip 
 
 ### Train
 
@@ -60,6 +57,21 @@ $ ./train.sh
 
 To see experiment trials, [click](https://github.com/ktaebum/AttentionedDeepPaint/tree/master/results)
 
+## General Result Example (Same Sketch, Different Styles)
+
+![Gen1](https://i.imgur.com/Ow8iNAp.png)
+![Gen2](https://i.imgur.com/6efKure.png)
+![Gen3](https://i.imgur.com/7liDJ0V.png)
+![Gen4](https://i.imgur.com/TCwEyfy.png)
+![Gen5](https://i.imgur.com/Tj4NEed.png)
+![Gen6](https://i.imgur.com/gYz5iPS.png)
+![Gen7](https://i.imgur.com/eHlqFuu.png)
+![Gen8](https://i.imgur.com/yUWwZw8.png)
+![Gen9](https://i.imgur.com/RkRRqDn.png)
+![Gen10](https://i.imgur.com/CnLnCfK.png)
+![Gen11](https://i.imgur.com/Nq8Yo4i.png)
+![Gen12](https://i.imgur.com/4Pjv9zl.png)
+
 ## Attention Map Result Examples
 ![attrefer](https://i.imgur.com/Y1SPOFy.png)
 ![Att1](https://i.imgur.com/Unu0BBm.png)
@@ -81,4 +93,4 @@ Hyperparameter   | Value
 `Discriminator` | `PatchGAN`
 `Weight Initialization` | `(0, 0.02) Normal Distribution`
 
-![Log](https://i.imgur.com/ynt4I1d.png)
+![Log](https://i.imgur.com/nM60lAM.png)
