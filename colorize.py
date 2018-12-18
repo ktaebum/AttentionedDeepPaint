@@ -69,13 +69,15 @@ def main():
 
     filename = sys.argv[1][:-4] + sys.argv[2][:-4] + '.png'
 
-    style = Image.open(style_f)
+    style = Image.open(style_f).convert('RGB')
+    style = transforms.Resize((512, 512))(style)
     style_pil = style
-    test = Image.open(test_f)
-    test_pil = test
+
+    test = Image.open(test_f).convert('RGB')
+    test_pil = transforms.Resize((512, 512))(test)
 
     transform = transforms.Compose(
-        [transforms.CenterCrop(512),
+        [transforms.Resize((512, 512)),
          transforms.ToTensor()])
 
     test = transform(test)
