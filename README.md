@@ -7,7 +7,7 @@
 Refer [requirements](https://github.com/ktaebum/AttentionedDeepPaint/tree/master/requirements.txt)
 
 Install 
-1. Pytorch (>= 0.4.1) (Not tested for latest 1.0 version yet)
+1. Pytorch (>= 0.4.1) (No problem in torch 1.0.1)
 2. Torchvision (>= 0.2.1)
 based on your python version, os, cuda version etc...
 
