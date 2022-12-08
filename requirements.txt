@@ -1,4 +1,4 @@
-certifi==2018.10.15
+certifi==2022.12.7
 cloudpickle==0.6.1
 cycler==0.10.0
 dask==1.0.0
